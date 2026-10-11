@@ -1,0 +1,26 @@
+# Python 編譯快取
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# PyInstaller 封裝輸出與暫存檔
+build/
+dist/
+*.spec
+
+# 執行期本機設定、快取與日誌
+config.json
+KenshiModTool.json
+masterlist.json
+mod_names_zh.json
+unsubscribedMods
+*.cfg
+*.cfg.backup
+logs/
+reports/
+error.log
+info.log
+bkpsubscribedList*.info

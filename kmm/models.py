@@ -1,0 +1,91 @@
+"""資料模型（對應 C# Core/Models/Mod.cs、Rules.cs）。"""
+from __future__ import annotations
+
+import enum
+import uuid
+from dataclasses import dataclass, field
+from pathlib import PurePath
+
+from . import constants
+
+
+class Source(enum.Enum):
+    GAME_FOLDER = "GameFolder"
+    STEAM = "Steam"
+
+    @property
+    def label(self) -> str:
+        return "Steam" if self is Source.STEAM else "遊戲資料夾"
+
+
+@dataclass(eq=False)
+class Mod:
+    file_path: str
+    source: Source = Source.GAME_FOLDER
+    id: str | None = None
+    title: str = ""
+    zh_name: str = ""
+    description: str = ""
+    author: str = ""
+    version: str = ""
+    order: int = -1
+    active: bool = False
+    categories: list[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
+    references: list[str] = field(default_factory=list)
+    conflicts: list[str] = field(default_factory=list)
+    ordered_automatically: bool = False
+    uid: str = field(default_factory=lambda: uuid.uuid4().hex)
+
+    @property
+    def file_name(self) -> str:
+        return PurePath(self.file_path).name
+
+    @property
+    def has_extension(self) -> bool:
+        return bool(PurePath(self.file_path).suffix)
+
+    @property
+    def display_name(self) -> str:
+        stem = PurePath(self.file_path).stem if self.has_extension else PurePath(self.file_path).name
+        return stem if self.has_extension else f"[錯誤]：{stem}"
+
+    def ui_name(self, show_zh: bool = True) -> str:
+        base = self.display_name
+        if not show_zh or not self.zh_name or not self.has_extension:
+            return base
+        zh = self.zh_name.strip()
+        if not zh or zh.lower() == base.lower():
+            return base
+        return f"【{zh}】 {base}"
+
+    @property
+    def folder(self) -> str:
+        p = PurePath(self.file_path)
+        return str(p.parent) if self.has_extension else str(p)
+
+    @property
+    def display_categories(self) -> str:
+        return ", ".join(self.categories)
+
+    @property
+    def all_dependencies(self) -> list[str]:
+        return [d for d in (*self.dependencies, *self.references)
+                if d and d.lower() not in constants.SKIPPABLE_MODS]
+
+    def url(self, steam_page_url: str, nexus_page_url: str) -> str:
+        if self.source is Source.STEAM and self.id:
+            return steam_page_url + self.id
+        return nexus_page_url + self.display_name
+
+
+@dataclass
+class Rule:
+    order: int
+    name: str
+    mods: list[str]
+    mods_ordered: list[Mod] = field(default_factory=list)
+
+    @property
+    def initial_range(self) -> int:
+        return constants.RULE_MAX_RANGE * self.order
