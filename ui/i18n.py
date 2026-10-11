@@ -216,6 +216,13 @@ _ZH_TW: dict[str, str] = {
     "ABOUT_OPEN_ORIG_REPO": "🔗 開啟原始專案 GitHub",
     "ABOUT_OPEN_SORT_GUIDE": "📖 開啟自動排序規則指南",
     "ABOUT_CLOSE": "關閉",
+    "ABOUT_DONATE_TITLE": "☕ 隨喜贊助支持（非必要）",
+    "ABOUT_DONATE_NOTE": (
+        "本工具完全免費開源，僅是玩家覺得很好用、願意捐款鼓勵時才使用，並非必要！\n"
+        "若您對我的工作很有興趣，也十分歡迎捐款告知或來信交流（mymagadsl@gmail.com）。\n"
+        "支援：TWQR（全台各家銀行／電支）與 街口支付 (396-900610912)"
+    ),
+    "ABOUT_DONATE_ZOOM": "🔍 點擊放大檢視收款 QR Code",
     "ABOUT_DESCRIPTION_TEXT": (
         "【專案改寫與致謝聲明】\n"
         "• Python 改寫與擴充作者：北極企鵝 (mymagadsl@gmail.com)\n"
@@ -430,6 +437,13 @@ _ZH_CN: dict[str, str] = {
     "ABOUT_OPEN_ORIG_REPO": "🔗 打开原始项目 GitHub",
     "ABOUT_OPEN_SORT_GUIDE": "📖 打开自动排序规则指南",
     "ABOUT_CLOSE": "关闭",
+    "ABOUT_DONATE_TITLE": "☕ 随喜赞助支持（非必要）",
+    "ABOUT_DONATE_NOTE": (
+        "本工具完全免费开源，仅是玩家觉得很好用、愿意捐款鼓励时才使用，并非必要！\n"
+        "若您对我的工作很有兴趣，也十分欢迎捐款告知或来信交流（mymagadsl@gmail.com）。\n"
+        "支持：TWQR（全台各家银行／电支）与 街口支付 (396-900610912)"
+    ),
+    "ABOUT_DONATE_ZOOM": "🔍 点击放大查看收款 QR Code",
     "ABOUT_DESCRIPTION_TEXT": (
         "【项目改写与致谢声明】\n"
         "• Python 改写与扩展作者：北極企鵝 (mymagadsl@gmail.com)\n"
@@ -647,6 +661,13 @@ _EN_US: dict[str, str] = {
     "ABOUT_OPEN_ORIG_REPO": "🔗 Open Original GitHub Repo",
     "ABOUT_OPEN_SORT_GUIDE": "📖 Open Load Order Guide",
     "ABOUT_CLOSE": "Close",
+    "ABOUT_DONATE_TITLE": "☕ Optional Donation (TWQR / JKOPay)",
+    "ABOUT_DONATE_NOTE": (
+        "This tool is 100% free and open-source. Donations are completely optional and only for players who find it useful!\n"
+        "If you are interested in my development work, feel free to donate with a note or reach out (mymagadsl@gmail.com).\n"
+        "Supports: TWQR (Taiwan Banks & E-Wallets) & JKOPay (396-900610912)"
+    ),
+    "ABOUT_DONATE_ZOOM": "🔍 Click to Enlarge QR Code",
     "ABOUT_DESCRIPTION_TEXT": (
         "[Project Rewrite & Attribution]\n"
         "• Python Rewrite & Enhancements Author: 北極企鵝 (mymagadsl@gmail.com)\n"

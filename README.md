@@ -123,6 +123,19 @@ python build_gui.py
 
 ---
 
+## ☕ 隨喜贊助與支持（Donation & Support）
+
+> 💡 **特別說明**：本工具完全免費且開源，**捐款並非必要**！僅供玩家覺得本工具很好用、願意隨喜捐款鼓勵時使用。  
+> 若您對我的開發工作很有興趣或有任何合作想法，也十分歡迎透過捐款備註告知，或直接來信與我交流（[`mymagadsl@gmail.com`](mailto:mymagadsl@gmail.com)）！
+
+下方收款 QR Code 同時支援 **TWQR（台灣所有銀行行動網銀 App、台灣 Pay、全支付、一卡通 iPASS MONEY 等）** 以及 **街口支付（街口代碼 `396`／帳號 `900610912` 北極企鵝）**：
+
+<p align="center">
+  <img src="kmm/donate_qr.png" width="320" alt="TWQR / 街口支付 隨喜贊助收款碼 (北極企鵝 396-900610912)">
+</p>
+
+---
+
 ## 📜 授權條款與致謝（License & Credits）
 
 本專案遵循原專案之 **[MIT License](LICENSE)** 授權條款釋出：

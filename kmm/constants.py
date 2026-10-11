@@ -44,6 +44,7 @@ REPORTS_DIR = BASE_DIR / "reports"
 
 BASE_RULES_FILE = _resolve_resource("base_rules.json")
 BASE_NAMES_ZH_FILE = _resolve_resource("base_mod_names_zh.json")
+DONATE_QR_FILE = _resolve_resource("donate_qr.png")
 
 STEAM_REGISTRY_PATHS = [
     (r"SOFTWARE\WOW6432Node\Valve\Steam", "InstallPath"),

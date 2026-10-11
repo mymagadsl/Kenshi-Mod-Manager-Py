@@ -92,9 +92,9 @@ def build_pyinstaller_args(
     if icon_path and Path(icon_path).is_file():
         cmd.extend(["--icon", str(Path(icon_path).resolve())])
 
-    # 自動收集 CustomTkinter 資源與專案內建 JSON 資料檔
+    # 自動收集 CustomTkinter 資源與專案內建 JSON / QR Code 資料檔
     cmd.extend(["--collect-all", "customtkinter"])
-    for res_name in ("base_rules.json", "base_mod_names_zh.json"):
+    for res_name in ("base_rules.json", "base_mod_names_zh.json", "donate_qr.png"):
         res_file = PROJECT_DIR / "kmm" / res_name
         if res_file.is_file():
             cmd.extend(["--add-data", f"{res_file}{sep}kmm"])
