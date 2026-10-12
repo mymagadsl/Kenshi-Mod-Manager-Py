@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -162,6 +163,8 @@ def folder_cleanup(path: Path) -> list[Path]:
             pass
     if removed:
         logging_util.write(constants.LOG_FILE, [f"已刪除空資料夾：{p}" for p in removed])
+    if path.name == constants.KENSHI_APP_ID:
+        clean_workshop_acf(path)
     return removed
 
 
@@ -269,7 +272,9 @@ def get_list_of_mods(cfg: KenshiToolConfig) -> list[Mod]:
     current = get_current_active_mods(cfg)
     mods: list[Mod] = []
     if cfg.uses_steam and cfg.SteamModsPath:
-        mods.extend(load_mods_from(cfg, current, Path(cfg.SteamModsPath)))
+        steam_path = Path(cfg.SteamModsPath)
+        clean_workshop_acf(steam_path)
+        mods.extend(load_mods_from(cfg, current, steam_path))
     if cfg.GamePath:
         mods.extend(load_mods_from(cfg, current, cfg.mod_folder))
 
@@ -448,6 +453,110 @@ def _force_remove_readonly(func, path, _exc) -> None:
     func(path)
 
 
+def clean_workshop_acf(
+    steam_mods_path: Path,
+    removed_ids: set[str] | None = None,
+) -> int:
+    """從 appworkshop_233860.acf 移除已不存在於工作坊目錄的殘留模組紀錄，並重新計算 SizeOnDisk。回傳移除的模組 ID 數量。"""
+    if not steam_mods_path or not steam_mods_path.is_dir():
+        return 0
+    acf_path = steam_mods_path.parent.parent / f"appworkshop_{constants.KENSHI_APP_ID}.acf"
+    if not acf_path.is_file():
+        return 0
+
+    try:
+        text = acf_path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        logging_util.write_exception(constants.ERROR_FILE, exc)
+        return 0
+
+    valid_ids = {
+        p.name for p in steam_mods_path.iterdir()
+        if p.is_dir() and p.name.isdigit()
+    }
+    if removed_ids:
+        valid_ids -= {str(x).strip() for x in removed_ids}
+
+    lines = text.splitlines()
+    out_lines: list[str] = []
+    cleaned_ids: set[str] = set()
+    section: str | None = None
+    depth = 0
+    skip_until_depth: int | None = None
+    total_size = 0
+
+    key_only_re = re.compile(r'^\s*"([^"]+)"\s*$')
+    kv_re = re.compile(r'^(\s*"([^"]+)"\s+)"([^"]*)"(\s*)$')
+
+    for line in lines:
+        stripped = line.strip()
+        if skip_until_depth is not None:
+            if stripped == "{":
+                depth += 1
+            elif stripped == "}":
+                depth -= 1
+                if depth <= skip_until_depth:
+                    skip_until_depth = None
+            continue
+
+        if stripped == "{":
+            depth += 1
+            out_lines.append(line)
+            continue
+        if stripped == "}":
+            depth -= 1
+            if depth <= 1:
+                section = None
+            out_lines.append(line)
+            continue
+
+        m_key = key_only_re.match(line)
+        if m_key:
+            key = m_key.group(1)
+            if depth == 1 and key in ("WorkshopItemsInstalled", "WorkshopItemDetails"):
+                section = key
+                out_lines.append(line)
+                continue
+            if depth == 2 and section in ("WorkshopItemsInstalled", "WorkshopItemDetails") and key.isdigit():
+                if key not in valid_ids:
+                    cleaned_ids.add(key)
+                    skip_until_depth = depth
+                    continue
+
+        if depth == 3 and section == "WorkshopItemsInstalled":
+            m_kv = kv_re.match(line)
+            if m_kv and m_kv.group(2) == "size" and m_kv.group(3).isdigit():
+                total_size += int(m_kv.group(3))
+
+        out_lines.append(line)
+
+    if not cleaned_ids:
+        return 0
+
+    # 更新頂層 SizeOnDisk
+    for idx, line in enumerate(out_lines):
+        m_kv = kv_re.match(line)
+        if m_kv and m_kv.group(2) == "SizeOnDisk":
+            out_lines[idx] = f'{m_kv.group(1)}"{total_size}"{m_kv.group(4)}'
+            break
+
+    try:
+        backup_path = acf_path.with_name(f"{acf_path.name}.bak")
+        _ensure_writable(backup_path)
+        backup_path.write_text(text, encoding="utf-8", newline="\n")
+        _ensure_writable(acf_path)
+        acf_path.write_text("\n".join(out_lines) + "\n", encoding="utf-8", newline="\n")
+        logging_util.write(
+            constants.LOG_FILE,
+            f"已從 {acf_path.name} 清理 {len(cleaned_ids)} 個殘留工作坊紀錄：{', '.join(sorted(cleaned_ids))}",
+        )
+    except OSError as exc:
+        logging_util.write_exception(constants.ERROR_FILE, exc)
+        return 0
+
+    return len(cleaned_ids)
+
+
 def remove_mods_and_folders(
     cfg: KenshiToolConfig,
     mods: list[Mod],
@@ -458,6 +567,7 @@ def remove_mods_and_folders(
     removed_count = 0
     errors: list[str] = []
     logs: list[str] = []
+    removed_steam_ids: set[str] = set()
 
     for mod in target_list:
         folder = Path(mod.folder)
@@ -481,6 +591,10 @@ def remove_mods_and_folders(
                 logs.append(f"已刪除模組資料夾：{folder}")
             else:
                 logs.append(f"已移除不存在的模組項目：{folder}")
+            if folder.name.isdigit():
+                removed_steam_ids.add(folder.name)
+            if mod.id and mod.id.isdigit():
+                removed_steam_ids.add(mod.id)
             if mod in mods:
                 mods.remove(mod)
             removed_count += 1
@@ -490,5 +604,8 @@ def remove_mods_and_folders(
     normalize_orders(mods)
     logging_util.write(constants.LOG_FILE, logs)
     logging_util.write(constants.ERROR_FILE, errors)
+    if cfg.uses_steam and cfg.SteamModsPath:
+        clean_workshop_acf(Path(cfg.SteamModsPath), removed_steam_ids)
     return removed_count, errors
+
 

@@ -39,9 +39,31 @@ _ZH_TW: dict[str, str] = {
     "BTN_SAVE_ORDER": "💾 儲存模組順序",
     "BTN_AUTO_ORDER": "🔀 自動排序",
     "BTN_CHECK_CONFLICTS": "⚠ 檢查衝突",
+    "BTN_ANALYZE_LOGS": "🩺 分析當機 Log",
     "BTN_SETTINGS": "⚙ 設定",
     "BTN_UPDATE_RULES": "🔄 更新排序規則",
     "BTN_FCS": "🛠 開啟 FCS 編輯器",
+
+    # 當機與 Log 診斷視窗
+    "LA_TITLE": "🩺 Kenshi 當機與 Log 診斷分析",
+    "LA_ANALYZING": "正在掃描並分析遊戲 Log、RE_Kenshi 外掛與 CrashDump 紀錄…",
+    "LA_BTN_REANALYZE": "🔄 重新分析",
+    "LA_BTN_CLEAN_LOGS": "🗑 清理遊戲 Log",
+    "LA_BTN_COPY": "📋 複製完整報告",
+    "LA_BTN_OPEN_DIR": "📂 開啟遊戲目錄",
+    "LA_SUSPECTS_HINT": "🎯 可疑當機來源模組排行（點擊按鈕可直接跳轉並選取主視窗中的該模組）：",
+    "LA_NO_SUSPECTS": "目前未在 Log 中偵測到明確的當機可疑模組。",
+    "LA_JUMPED_TO_MOD": "✔ 已在主視窗清單中定位並選取模組：{name}",
+    "LA_MOD_NOT_IN_LIST": "ℹ 「{name}」屬於獨立 DLL 外掛或未列於模組清單中。",
+    "LA_COPIED": "✔ 診斷報告已複製到剪貼簿！",
+    "LA_CLEAN_NONE": "目前遊戲目錄中沒有可清理的 Log 或 CrashDump 檔案。",
+    "LA_CLEAN_CONFIRM": (
+        "掃描到遊戲目錄與 RE_Kenshi 中共有 {n} 個日誌／崩潰傾印檔案（合計 {size}）：\n\n"
+        "{preview}\n\n"
+        "確定要清除這些舊 Log 與 CrashDump 檔案以釋放空間並避免干擾後續診斷嗎？"
+    ),
+    "LA_CLEAN_DONE": "✔ 已成功清理 {n} 個遊戲 Log 與 CrashDump 檔案（釋放 {size}）！",
+    "LA_CLEAN_ERRORS": "已清理 {n} 個檔案（釋放 {size}），但有部分檔案無法刪除：\n{e}",
 
     # 搜尋 / 篩選
     "SEARCH_PLACEHOLDER": "搜尋模組中文譯名、英文名稱或 Steam ID…（Enter 跳到下一筆）",
@@ -180,7 +202,7 @@ _ZH_TW: dict[str, str] = {
     "SET_BROWSE": "瀏覽…",
     "SET_AUTODETECT": "自動偵測",
     "SET_CLEAR_LOGS": "🗑 清除備份與日誌",
-    "SET_LOGS_CLEARED": "已清除 {n} 個訂閱備份（bkpsubscribedList）與日誌檔案。",
+    "SET_LOGS_CLEARED": "已清除 {n} 個訂閱備份與管理日誌，以及 {gn} 個遊戲 Log／CrashDump 檔案（釋放 {size}）。",
     "SET_SAVE": "儲存",
     "SET_CANCEL": "取消",
     "SET_SAVED": "設定已儲存，模組清單將重新讀取。",
@@ -260,9 +282,31 @@ _ZH_CN: dict[str, str] = {
     "BTN_SAVE_ORDER": "💾 保存模组顺序",
     "BTN_AUTO_ORDER": "🔀 自动排序",
     "BTN_CHECK_CONFLICTS": "⚠ 检查冲突",
+    "BTN_ANALYZE_LOGS": "🩺 分析崩溃 Log",
     "BTN_SETTINGS": "⚙ 设置",
     "BTN_UPDATE_RULES": "🔄 更新排序规则",
     "BTN_FCS": "🛠 打开 FCS 编辑器",
+
+    # 崩溃与 Log 诊断窗口
+    "LA_TITLE": "🩺 Kenshi 崩溃与 Log 诊断分析",
+    "LA_ANALYZING": "正在扫描并分析游戏 Log、RE_Kenshi 插件与 CrashDump 记录…",
+    "LA_BTN_REANALYZE": "🔄 重新分析",
+    "LA_BTN_CLEAN_LOGS": "🗑 清理游戏 Log",
+    "LA_BTN_COPY": "📋 复制完整报告",
+    "LA_BTN_OPEN_DIR": "📂 打开游戏目录",
+    "LA_SUSPECTS_HINT": "🎯 可疑崩溃来源模组排行（点击按钮可直接跳转并选中主窗口中的该模组）：",
+    "LA_NO_SUSPECTS": "当前未在 Log 中检测到明确的崩溃可疑模组。",
+    "LA_JUMPED_TO_MOD": "✔ 已在主窗口列表中定位并选中模组：{name}",
+    "LA_MOD_NOT_IN_LIST": "ℹ “{name}”属于独立 DLL 插件或未列于模组列表中。",
+    "LA_COPIED": "✔ 诊断报告已复制到剪贴板！",
+    "LA_CLEAN_NONE": "当前游戏目录中没有可清理的 Log 或 CrashDump 文件。",
+    "LA_CLEAN_CONFIRM": (
+        "扫描到游戏目录与 RE_Kenshi 中共有 {n} 个日志／崩溃转储文件（合计 {size}）：\n\n"
+        "{preview}\n\n"
+        "确定要清除这些旧 Log 与 CrashDump 文件以释放空间并避免干扰后续诊断吗？"
+    ),
+    "LA_CLEAN_DONE": "✔ 已成功清理 {n} 个游戏 Log 与 CrashDump 文件（释放 {size}）！",
+    "LA_CLEAN_ERRORS": "已清理 {n} 个文件（释放 {size}），但有部分文件无法删除：\n{e}",
 
     # 搜索 / 筛选
     "SEARCH_PLACEHOLDER": "搜索模组中文译名、英文名称或 Steam ID…（Enter 跳到下一项）",
@@ -401,7 +445,7 @@ _ZH_CN: dict[str, str] = {
     "SET_BROWSE": "浏览…",
     "SET_AUTODETECT": "自动检测",
     "SET_CLEAR_LOGS": "🗑 清除备份与日志",
-    "SET_LOGS_CLEARED": "已清除 {n} 个订阅备份（bkpsubscribedList）与日志文件。",
+    "SET_LOGS_CLEARED": "已清除 {n} 个订阅备份与管理日志，以及 {gn} 个游戏 Log／CrashDump 文件（释放 {size}）。",
     "SET_SAVE": "保存",
     "SET_CANCEL": "取消",
     "SET_SAVED": "设置已保存，模组列表将重新读取。",
@@ -481,9 +525,32 @@ _EN_US: dict[str, str] = {
     "BTN_SAVE_ORDER": "💾 Save Load Order",
     "BTN_AUTO_ORDER": "🔀 Auto Sort",
     "BTN_CHECK_CONFLICTS": "⚠ Check Conflicts",
+    "BTN_ANALYZE_LOGS": "🩺 Analyze Crash Logs",
     "BTN_SETTINGS": "⚙ Settings",
     "BTN_UPDATE_RULES": "🔄 Update Rules",
     "BTN_FCS": "🛠 Launch FCS",
+
+    # Log Analyzer Window
+    "LA_TITLE": "🩺 Kenshi Crash & Log Diagnostic Analyzer",
+    "LA_ANALYZING": "Scanning and analyzing Kenshi logs, RE_Kenshi plugins, and CrashDumps…",
+    "LA_BTN_REANALYZE": "🔄 Re-Analyze",
+    "LA_BTN_COPY": "📋 Copy Report",
+    "LA_BTN_OPEN_DIR": "📂 Open Game Dir",
+    "LA_BTN_CLEAN_LOGS": "🗑 Clean Game Logs",
+    "LA_SUSPECTS_HINT": "🎯 Suspected Crash Source Mods (Click to jump & select in main window):",
+    "LA_NO_SUSPECTS": "No specific suspected crash mods detected in current logs.",
+    "LA_JUMPED_TO_MOD": "✔ Jumped to and selected mod in main window: {name}",
+    "LA_MOD_NOT_IN_LIST": "ℹ '{name}' is a standalone DLL plugin or not in the mod list.",
+    "LA_COPIED": "✔ Diagnostic report copied to clipboard!",
+    "LA_CLEAN_NONE": "There are currently no game logs or CrashDump files to clean.",
+    "LA_CLEAN_CONFIRM": (
+        "Detected {n} game logs & CrashDump files (Total size: {size}):\n\n"
+        "{preview}\n\n"
+        "Are you sure you want to delete these log files to free up space?\n"
+        "(Kenshi will automatically regenerate new logs on next launch)"
+    ),
+    "LA_CLEAN_DONE": "✔ Cleaned {n} game log files, freed {size} of disk space!",
+    "LA_CLEAN_ERRORS": "Cleaned {n} files (freed {size}), but some files are locked and could not be deleted:\n{e}",
 
     # Search / Filter
     "SEARCH_PLACEHOLDER": "Search mod name, translated title, or Steam ID… (Enter for next)",
@@ -625,7 +692,7 @@ _EN_US: dict[str, str] = {
     "SET_BROWSE": "Browse…",
     "SET_AUTODETECT": "Auto Detect",
     "SET_CLEAR_LOGS": "🗑 Clear Backups & Logs",
-    "SET_LOGS_CLEARED": "Cleared {n} subscription backup and log files.",
+    "SET_LOGS_CLEARED": "Cleared {n} manager backups & logs, and {gn} game logs (freed {size}).",
     "SET_SAVE": "Save",
     "SET_CANCEL": "Cancel",
     "SET_SAVED": "Settings saved. Reloading mod list.",

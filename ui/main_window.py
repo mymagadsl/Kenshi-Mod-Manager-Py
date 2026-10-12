@@ -20,6 +20,7 @@ from . import i18n, theme
 from .about_window import AboutWindow
 from .detail_panel import DetailPanel
 from .folder_tool_window import FolderToolWindow
+from .log_analyzer_window import LogAnalyzerWindow
 from .mod_list import ModListView
 from .settings_window import SettingsWindow
 
@@ -68,6 +69,7 @@ class MainWindow(ctk.CTk):
             ("BTN_SAVE_ORDER", self.save_mod_list, True),
             ("BTN_AUTO_ORDER", self.auto_order_mods, False),
             ("BTN_CHECK_CONFLICTS", self.check_conflicts, False),
+            ("BTN_ANALYZE_LOGS", self.open_log_analyzer, False),
             ("BTN_UPDATE_RULES", self.update_rules_manual, False),
             ("BTN_FCS", self.start_fcs, False),
             ("BTN_SETTINGS", self.open_settings, False),
@@ -729,6 +731,31 @@ class MainWindow(ctk.CTk):
             os.startfile(path)
         else:
             messagebox.showerror(i18n.MSG_TITLE_ERROR, err, parent=self)
+
+    def open_log_analyzer(self) -> None:
+        if not self.cfg.GamePath or not os.path.isdir(self.cfg.GamePath):
+            messagebox.showerror(i18n.MSG_TITLE_ERROR, i18n.MSG_GAME_FOLDER_BAD, parent=self)
+            return
+        LogAnalyzerWindow(self, self.cfg, self.mods, on_select_mod=self._select_mod_target)
+
+    def _select_mod_target(self, target: Mod) -> None:
+        filter_changed = False
+        if target.source is Source.STEAM and not self.var_steam.get():
+            self.var_steam.set(True)
+            filter_changed = True
+        elif target.source is Source.GAME_FOLDER and not self.var_regular.get():
+            self.var_regular.set(True)
+            filter_changed = True
+        if not target.active and self.var_active_only.get():
+            self.var_active_only.set(False)
+            filter_changed = True
+        if not target.conflicts and self.var_conflict_only.get():
+            self.var_conflict_only.set(False)
+            filter_changed = True
+        if filter_changed:
+            self.refresh_view()
+        self.mod_list.see(target, select=True)
+        self.detail.show(target)
 
     def open_settings(self) -> None:
         SettingsWindow(self, self.cfg, on_saved=self._on_settings_saved)

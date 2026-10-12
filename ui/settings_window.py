@@ -6,7 +6,7 @@ from typing import Callable
 
 import customtkinter as ctk
 
-from kmm import loader, steam
+from kmm import loader, log_analyzer, steam
 from kmm.config import KenshiToolConfig
 
 from . import i18n, theme
@@ -100,7 +100,17 @@ class SettingsWindow(ctk.CTkToplevel):
 
     def _clear_logs(self) -> None:
         removed = loader.clear_logs_and_backups()
-        messagebox.showinfo(i18n.MSG_TITLE_INFO, i18n.SET_LOGS_CLEARED.format(n=removed), parent=self)
+        game_path = self.game_entry.get().strip() or self.cfg.GamePath
+        g_removed, freed_bytes, _ = log_analyzer.clean_game_logs(game_path)
+        messagebox.showinfo(
+            i18n.MSG_TITLE_INFO,
+            i18n.SET_LOGS_CLEARED.format(
+                n=removed,
+                gn=g_removed,
+                size=log_analyzer.format_bytes(freed_bytes),
+            ),
+            parent=self,
+        )
 
     def _save(self) -> None:
         self.cfg.GamePath = self.game_entry.get().strip()
