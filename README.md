@@ -25,7 +25,7 @@
 如果您是一般玩家，**不需要安裝 Python 或任何額外環境**，直接下載編譯好的獨立執行檔即可使用：
 
 1. 前往 **[👉 GitHub Releases 最新版本下載頁面](https://github.com/mymagadsl/Kenshi-Mod-Manager-Py/releases/latest)**。
-2. 下載 **`KenshiModManager.exe`**（或 **`KenshiModManager-v1.0.0-win64.zip`** 解壓縮）。
+2. 下載 **`KenshiModManager.exe`**（或 **`KenshiModManager-v1.0.2-win64.zip`** 解壓縮）。
 3. 將 `KenshiModManager.exe` 放在任意資料夾，雙擊即可直接執行！
    - 首次啟動時，程式會自動從 Windows 登錄檔與 Steam `libraryfolders.vdf` 偵測您的 **Kenshi 遊戲資料夾**與 **Steam 工作坊模組資料夾**（無須先開啟 Steam）。
    - 若您使用的是 GOG 或非 Steam 版本，也可在啟動提示或「`⚙ 設定`」視窗中手動指定 Kenshi 遊戲路徑。
@@ -44,6 +44,12 @@
 - **快速連結與工作坊退訂**：點擊網址直接開啟 Steam 工作坊或 NexusMods 頁面，亦可右鍵在 Steam 上取消訂閱或直接開啟模組本機資料夾。
 
 ### 2. 進階強化功能（本改寫版獨家新增）
+- **🩺 Kenshi 當機與 Log 診斷分析器（Crash & Log Diagnostic Analyzer）**：
+  - 工具列提供「**🩺 分析當機 Log**」按鈕，一鍵深度解析遊戲目錄下的 `crashDump*.zip`（內建 Windows Minidump `.dmp` 二進位解析器，直接讀取崩潰瞬間 Exception Code `0xC0000005`、故障指令位址 `RIP` 與當下掛載於記憶體的 `.dll` 插件清單）、`RE_Kenshi_log.txt`、`RE_Kenshi/DesoCrash.log`、`MyGUI.log`、`kenshi_info.log` 與 `Havok.log`。
+  - **🎯 可疑當機來源模組排行榜**：綜合崩潰位址、當機前密集運作紀錄與 `.dll` 二進位 Hook 特徵自動計分排序（嚴格過濾已取消勾選或未載入記憶體的模組），點擊排行榜上的按鈕即可在主視窗**一鍵定位並選取該模組**！
+  - **🧟 獨家偵測「關不掉的 INVENTORY 僵屍視窗／搜刮視窗異常」**：自動識別 `RE_Kenshi_log.txt` 中的 `engine GUI update raised exception`，精準揪出攔截背包建立、拿取物品與視窗關閉解構子（`~InventoryGUI`）而引發孤兒視窗的插件。
+  - **🖼 缺失貼圖真實來源反查**：自動對已啟用插件 `.dll` 進行二進位字串反查，精準找出 `MyGUI.log` 報錯的缺失貼圖實際由哪個外掛呼叫。
+  - **🗑 遊戲 Log 與龐大 CrashDump 一鍵清理**：於診斷視窗與設定視窗支援一鍵掃描並清除遊戲目錄、`RE_Kenshi/` 與 `logs/` 下無限累積的龐大歷史紀錄（如數十 MB 的 `DesoCrash.log.1` 與舊 `crashDump*.zip`），釋放硬碟空間並避免舊紀錄干擾後續診斷。
 - **⚠ 高速模組屬性衝突檢查器（Conflict Checker）**：
   - 深度解析所有啟用模組的 FCS 二進位紀錄（Records）與欄位變動，精準列出哪些模組修改了同一個遊戲物件與屬性。
   - 自動標示依目前載入順序「**◀ 最終生效（Winner）**」的模組。
@@ -62,8 +68,9 @@
     4. **第 4 層**：右鍵選單支援「**✏ 設定中文別名／備註…**」手動命名，以及「**🌐 自動翻譯未知英文模組**」一鍵線上翻譯並快取至本機！
 - **🔗 資料夾管理（免管理員權限建立目錄連接點 Junction）**：
   - 內建「資料夾管理」工具視窗，可將勾選的 Steam 工作坊模組以 Windows Junction 連結至遊戲 `mods/` 資料夾（**不需要系統管理員權限**），方便離線遊玩或供 FCS 編輯器讀取，並支援一鍵清除空資料夾。
-- **🧹 右鍵清理與集中式日誌管理**：
+- **🧹 右鍵清理、Steam 工作坊快取修復與集中式日誌管理**：
   - 右鍵選單支援一鍵「**移除該資料夾不存在的模組**」與「**移除未勾選的模組與資料夾**」。
+  - **自動修復 `appworkshop_233860.acf` 工作坊快取**：自動清除已退訂或已刪除的孤兒模組快取紀錄，防止 Steam 無限重抓已退訂的舊模組。
   - 自動將訂閱備份檔（`bkpsubscribedList*.info`）與執行日誌收納至 `logs/` 子目錄，並在設定視窗提供「**🗑 清除備份與日誌**」一鍵清理按鈕。
 - **🌍 多國語言操作介面即時熱切換**：
   - 於「`⚙ 設定`」視窗支援 **繁體中文（預設）**、**简体中文**、**English** 三種介面語言，儲存後無須重啟程式即可即時切換全部介面文字。
