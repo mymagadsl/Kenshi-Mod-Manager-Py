@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -23,9 +24,27 @@ from ui import theme
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ENTRY_SCRIPT = PROJECT_DIR / "main.py"
+CONSTANTS_FILE = PROJECT_DIR / "kmm" / "constants.py"
 DEFAULT_EXE_NAME = "KenshiModManager"
 DEFAULT_DIST_DIR = PROJECT_DIR / "dist"
 DEFAULT_BUILD_DIR = PROJECT_DIR / "build"
+
+
+def bump_app_version(constants_file: Path = CONSTANTS_FILE) -> tuple[str, str]:
+    """將 kmm/constants.py 中的 APP_VERSION 尾數自動 +1（即 +0.0.1），並回傳 (舊版本, 新版本)。"""
+    text = constants_file.read_text(encoding="utf-8")
+    pattern = re.compile(r'^(APP_VERSION\s*=\s*")(\d+)\.(\d+)\.(\d+)(")', re.MULTILINE)
+    m = pattern.search(text)
+    if not m:
+        return constants.APP_VERSION, constants.APP_VERSION
+    major, minor, patch = int(m.group(2)), int(m.group(3)), int(m.group(4))
+    old_ver = f"{major}.{minor}.{patch}"
+    new_ver = f"{major}.{minor}.{patch + 1}"
+    new_text = pattern.sub(rf"\g<1>{new_ver}\g<5>", text, count=1)
+    constants_file.write_text(new_text, encoding="utf-8")
+    if constants_file.resolve() == CONSTANTS_FILE.resolve():
+        constants.APP_VERSION = new_ver
+    return old_ver, new_ver
 
 
 def has_pyinstaller() -> bool:
@@ -111,8 +130,8 @@ class CompilerApp(ctk.CTk):
         super().__init__(fg_color=theme.BG)
 
         self.title(f"Kenshi 模組管理器 — 獨立執行檔編譯工具 (v{constants.APP_VERSION})")
-        self.geometry("780x680")
-        self.minsize(700, 600)
+        self.geometry("820x700")
+        self.minsize(720, 600)
         self._busy = False
 
         self.grid_columnconfigure(0, weight=1)
@@ -130,13 +149,14 @@ class CompilerApp(ctk.CTk):
         hdr.grid(row=0, column=0, sticky="ew", padx=14, pady=(14, 6))
         hdr.grid_columnconfigure(0, weight=1)
 
-        ctk.CTkLabel(
+        self.lbl_header = ctk.CTkLabel(
             hdr,
             text=f"🛠 Kenshi 模組管理器 — 獨立執行檔編譯工具  [v{constants.APP_VERSION}]",
             font=theme.font(16, "bold"),
             text_color="#ffffff",
             anchor="w",
-        ).grid(row=0, column=0, sticky="ew", padx=14, pady=(10, 2))
+        )
+        self.lbl_header.grid(row=0, column=0, sticky="ew", padx=14, pady=(10, 2))
 
         self.lbl_env = ctk.CTkLabel(
             hdr,
@@ -225,15 +245,17 @@ class CompilerApp(ctk.CTk):
         self.var_noconsole = ctk.BooleanVar(value=True)
         self.var_clean = ctk.BooleanVar(value=True)
         self.var_autoclean_temp = ctk.BooleanVar(value=True)
+        self.var_bump_version = ctk.BooleanVar(value=True)
         for text, var in (
             ("隱藏背景命令列視窗 (--noconsole)", self.var_noconsole),
             ("編譯前清理快取 (--clean)", self.var_clean),
             ("完成後自動刪除 build/ 與 .spec 暫存檔", self.var_autoclean_temp),
+            ("編譯時版本號自動 +0.0.1", self.var_bump_version),
         ):
             ctk.CTkCheckBox(
                 chk_frame, text=text, variable=var, font=theme.font(12),
                 checkbox_width=18, checkbox_height=18,
-            ).pack(side="left", padx=(0, 18))
+            ).pack(side="left", padx=(0, 16))
 
     def _build_progress_and_log(self) -> None:
         pframe = ctk.CTkFrame(self, fg_color="transparent")
@@ -268,6 +290,7 @@ class CompilerApp(ctk.CTk):
             f"=== Kenshi 模組管理器 編譯工具就緒 ===\n"
             f"• 專案路徑：{PROJECT_DIR}\n"
             f"• 進入點腳本：{ENTRY_SCRIPT}\n"
+            f"• 目前版本：v{constants.APP_VERSION}（勾選「編譯時版本號自動 +0.0.1」將於每次打包前自動升版）\n"
             f"• 自動隨附資源：customtkinter、kmm/base_rules.json、kmm/base_mod_names_zh.json\n"
         )
 
@@ -400,6 +423,17 @@ class CompilerApp(ctk.CTk):
                 self._install_then_build()
             return
 
+        if self.var_bump_version.get():
+            try:
+                old_ver, new_ver = bump_app_version()
+                self.title(f"Kenshi 模組管理器 — 獨立執行檔編譯工具 (v{new_ver})")
+                self.lbl_header.configure(
+                    text=f"🛠 Kenshi 模組管理器 — 獨立執行檔編譯工具  [v{new_ver}]"
+                )
+                self._append_log(f"\n🔼 版本號已自動 +0.0.1：v{old_ver} -> v{new_ver}（已寫入 kmm/constants.py）")
+            except OSError as exc:
+                self._append_log(f"\n[警告] 無法自動更新版本號：{exc}")
+
         exe_name = self.ent_name.get().strip() or DEFAULT_EXE_NAME
         dist_dir = Path(self.ent_dist.get().strip() or str(DEFAULT_DIST_DIR))
         onefile = self.var_mode.get() == "onefile"
@@ -413,9 +447,12 @@ class CompilerApp(ctk.CTk):
             icon_path=self.ent_icon.get().strip(),
         )
 
-        self._set_busy(True, f"正在編譯 {exe_name}.exe（請稍候約 20～60 秒）…")
+        self._set_busy(
+            True,
+            f"正在編譯 {exe_name}.exe [v{constants.APP_VERSION}]（請稍候約 20～60 秒）…",
+        )
         self._append_log("\n" + "=" * 68)
-        self._append_log(f"開始編譯時間：{time.strftime('%Y-%m-%d %H:%M:%S')}")
+        self._append_log(f"開始編譯時間：{time.strftime('%Y-%m-%d %H:%M:%S')}  ｜  目標版本：v{constants.APP_VERSION}")
         self._append_log(f"執行命令：{' '.join(cmd)}\n")
 
         def worker() -> None:
@@ -473,12 +510,18 @@ class CompilerApp(ctk.CTk):
             size_mb = target_exe.stat().st_size / (1024 * 1024)
             msg = (
                 f"✔ 編譯成功！（耗時 {elapsed:.1f} 秒）\n\n"
+                f"版本號碼：v{constants.APP_VERSION}\n"
                 f"輸出檔案：{target_exe}\n"
                 f"檔案大小：{size_mb:.2f} MB\n\n"
                 f"是否立即開啟輸出資料夾？"
             )
-            self._append_log(f"\n✔ 編譯完成：{target_exe} ({size_mb:.2f} MB，耗時 {elapsed:.1f} 秒)")
-            self._set_busy(False, f"✔ 編譯成功：{target_exe.name} ({size_mb:.2f} MB)")
+            self._append_log(
+                f"\n✔ 編譯完成 [v{constants.APP_VERSION}]：{target_exe} ({size_mb:.2f} MB，耗時 {elapsed:.1f} 秒)"
+            )
+            self._set_busy(
+                False,
+                f"✔ 編譯成功 [v{constants.APP_VERSION}]：{target_exe.name} ({size_mb:.2f} MB)",
+            )
             if messagebox.askyesno("編譯成功", msg, parent=self):
                 self.open_dist_folder()
         else:

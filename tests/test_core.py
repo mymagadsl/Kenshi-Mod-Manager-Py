@@ -513,6 +513,22 @@ class BuildGuiTest(unittest.TestCase):
         self.assertIn("base_rules.json", joined)
         self.assertIn("base_mod_names_zh.json", joined)
 
+    def test_bump_app_version(self):
+        import build_gui
+
+        with tempfile.TemporaryDirectory() as d:
+            dummy_const = Path(d) / "constants.py"
+            dummy_const.write_text('APP_NAME = "Kenshi"\nAPP_VERSION = "1.0.0"\n', encoding="utf-8")
+
+            old1, new1 = build_gui.bump_app_version(dummy_const)
+            self.assertEqual((old1, new1), ("1.0.0", "1.0.1"))
+            self.assertIn('APP_VERSION = "1.0.1"', dummy_const.read_text(encoding="utf-8"))
+
+            old2, new2 = build_gui.bump_app_version(dummy_const)
+            self.assertEqual((old2, new2), ("1.0.1", "1.0.2"))
+            self.assertIn('APP_VERSION = "1.0.2"', dummy_const.read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()
+

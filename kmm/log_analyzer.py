@@ -296,6 +296,9 @@ def analyze_logs(game_path: str | Path, mods: Iterable[Mod]) -> CrashAnalysisRep
         points: int,
         reason: str,
     ) -> None:
+        # 若該模組目前在管理器中已被使用者取消勾選（未啟用），則不列入可疑排行
+        if mod is not None and not mod.active:
+            return
         key = mod.uid if mod else (dll_name.lower() or fallback_name.lower())
         if key not in suspect_map:
             disp = mod.ui_name(True) if mod else fallback_name
@@ -322,15 +325,35 @@ def analyze_logs(game_path: str | Path, mods: Iterable[Mod]) -> CrashAnalysisRep
                 return m
         return None
 
+    # 檢查最新一局遊戲 Log 時間，判斷 crashDump 是否為上一局留下的舊檔案
+    re_log_path = game_dir / "RE_Kenshi_log.txt"
+    klog_path = game_dir / "kenshi.log"
+    latest_session_mtime = 0.0
+    for lp in (re_log_path, klog_path):
+        if lp.is_file():
+            try:
+                latest_session_mtime = max(latest_session_mtime, lp.stat().st_mtime)
+            except OSError:
+                pass
+
     # 1. 解析 crashDump*.zip
     dump = _analyze_crash_dump(game_dir)
     report.dump = dump
+    dump_is_stale = False
     if dump and dump.exception_code:
+        try:
+            dump_mtime = Path(dump.zip_path).stat().st_mtime
+            if latest_session_mtime > 0 and (latest_session_mtime - dump_mtime) > 60:
+                dump_is_stale = True
+        except OSError:
+            pass
+
         report.crash_detected = True
         report.crash_time_str = dump.crash_time
         fmod_short = Path(dump.faulting_module).name if dump.faulting_module else "未知模組"
+        stale_tag = " [前次舊紀錄，最新一局未閃退]" if dump_is_stale else ""
         report.crash_summary = (
-            f"偵測到崩潰傾印檔（{dump.crash_time}）：{dump.exception_name}，"
+            f"偵測到崩潰傾印檔（{dump.crash_time}{stale_tag}）：{dump.exception_name}，"
             f"故障位址：{fmod_short} + 0x{dump.faulting_offset:X}"
         )
         # 若崩潰位址直接落在某個第三方 .dll 插件內
@@ -345,7 +368,6 @@ def analyze_logs(game_path: str | Path, mods: Iterable[Mod]) -> CrashAnalysisRep
             )
 
     # 2. 解析 RE_Kenshi_log.txt
-    re_log_path = game_dir / "RE_Kenshi_log.txt"
     if re_log_path.is_file():
         try:
             re_lines = re_log_path.read_text(encoding="utf-8", errors="replace").splitlines()
@@ -401,6 +423,11 @@ def analyze_logs(game_path: str | Path, mods: Iterable[Mod]) -> CrashAnalysisRep
                 )
 
         if parsed_rows:
+            re_log_had_crash = bool(
+                report.re_kenshi_crash_line
+                or gui_exc_timestamps
+                or (dump and dump.exception_code and not dump_is_stale)
+            )
             # 若本局有明確 Crash 則看最後 30 秒；若為 GUI 異常攔截則看異常發生瞬間前 15 秒至後 5 秒
             if report.re_kenshi_crash_line:
                 ref_ts = parsed_rows[-1][0]
@@ -429,6 +456,8 @@ def analyze_logs(game_path: str | Path, mods: Iterable[Mod]) -> CrashAnalysisRep
 
             for actor, cnt in counts.most_common(8):
                 report.re_kenshi_recent_activity.append((actor, cnt, last_msg_map.get(actor, "")))
+                if not re_log_had_crash:
+                    continue
                 mod_obj = resolve_mod(actor)
                 dll_str = f"{actor}.dll" if f"{actor.lower()}.dll" in dll_profiles else ""
                 if actor in very_last_actors:
@@ -448,6 +477,20 @@ def analyze_logs(game_path: str | Path, mods: Iterable[Mod]) -> CrashAnalysisRep
                         f"⏱ 在異常／當機前頻繁運作（共輸出 {cnt} 筆紀錄，最後紀錄：{last_msg_map.get(actor, '')}）",
                     )
 
+    # 彙整當局實際載入記憶體的 DLL 清單（取自 RE_Kenshi_log.txt 與 CrashDump）
+    loaded_dll_names: set[str] = {dll.lower() for _, dll in report.re_kenshi_loaded_plugins}
+    if dump and dump.plugin_dlls:
+        for p_dll in dump.plugin_dlls:
+            loaded_dll_names.add(Path(p_dll).name.lower())
+
+    def is_dll_active_and_loaded(dll_key: str, prof: _DllProfile) -> bool:
+        """確認該插件所屬模組目前處於『已勾選啟用』狀態，且實際有在當局被載入記憶體。"""
+        if prof.mod is not None and not prof.mod.active:
+            return False
+        if loaded_dll_names and dll_key.lower() not in loaded_dll_names:
+            return False
+        return True
+
     # 3. 解析 DesoCrash.log
     deso = _analyze_deso_crash(game_dir)
     report.deso_entry = deso
@@ -464,6 +507,8 @@ def analyze_logs(game_path: str | Path, mods: Iterable[Mod]) -> CrashAnalysisRep
     # 若偵測到 DivineGraceUI 攔截到 engine GUI update raised exception（導致關不掉的 INVENTORY 僵屍視窗）
     if report.gui_exceptions:
         for dll_name, prof in dll_profiles.items():
+            if not is_dll_active_and_loaded(dll_name, prof):
+                continue
             if prof.hooks_inventory_lifecycle:
                 add_suspect(
                     prof.mod,
@@ -520,11 +565,13 @@ def analyze_logs(game_path: str | Path, mods: Iterable[Mod]) -> CrashAnalysisRep
         # 只保留最後 10 筆 MyGUI Error
         report.mygui_errors = report.mygui_errors[-10:]
 
-        # 反查是哪個 .dll 插件引用了該缺失貼圖
+        # 反查是哪個 .dll 插件引用了該缺失貼圖（僅檢查已啟用且有載入的插件）
         for tex in sorted(missing_tex):
             tex_bytes = tex.encode("ascii", errors="ignore")
             owners: list[str] = []
             for dll_name, prof in dll_profiles.items():
+                if not is_dll_active_and_loaded(dll_name, prof):
+                    continue
                 if tex_bytes and tex_bytes in prof.ascii_blob:
                     disp = prof.mod.ui_name(True) if prof.mod else dll_name
                     owners.append(f"{disp} ({prof.dll_path.name})")
@@ -538,9 +585,11 @@ def analyze_logs(game_path: str | Path, mods: Iterable[Mod]) -> CrashAnalysisRep
             if owners:
                 report.missing_textures_owners[tex] = owners
 
-    # 若為 UI / 背包空指標崩潰，將所有攔截 InventoryIcon / InventoryGUI / Inventory 的插件列入嫌疑
+    # 若為 UI / 背包空指標崩潰，將所有「已勾選啟用且當局實際載入」並攔截 InventoryIcon / InventoryGUI / Inventory 的插件列入嫌疑
     if is_ui_or_inventory_crash or report.mygui_errors:
         for dll_name, prof in dll_profiles.items():
+            if not is_dll_active_and_loaded(dll_name, prof):
+                continue
             if prof.hooks_inventory_icon:
                 add_suspect(
                     prof.mod,
@@ -599,7 +648,6 @@ def analyze_logs(game_path: str | Path, mods: Iterable[Mod]) -> CrashAnalysisRep
                                 )
         report.missing_meshes = [f"{k}（{v} 次）" for k, v in mesh_counter.most_common(8)]
 
-    klog_path = game_dir / "kenshi.log"
     if klog_path.is_file():
         try:
             size = klog_path.stat().st_size
@@ -645,18 +693,25 @@ def analyze_logs(game_path: str | Path, mods: Iterable[Mod]) -> CrashAnalysisRep
         else:
             report.crash_summary = "近期 Log 中未偵測到明確的當機傾印，以下為最新執行的診斷記錄。"
 
+    top_names = "、".join(f"『{s.name}』" for s in report.suspects[:3]) if report.suspects else "上方可疑插件"
+
     # 產生具體排查建議
+    if dump_is_stale:
+        report.recommendations.append(
+            f"【舊 CrashDump 提醒】目前偵測到的『{Path(dump.zip_path).name}』（{dump.crash_time}）是前次遊戲留下的舊崩潰傾印檔，"
+            "而您最新一局遊戲並未發生閃退。建議點擊右上角「🗑 清理遊戲 Log」將舊傾印檔清除，避免舊紀錄干擾後續診斷。"
+        )
     if report.gui_exceptions:
         report.recommendations.append(
             "【關不掉的 INVENTORY 僵屍視窗／搜刮視窗異常排查】Log 記錄到『engine GUI update raised exception』！"
-            "這是因為您在撿拾物品並關閉視窗時，背包外掛（頭號嫌疑為『Skeleton Rebirth 骨人重生系統』，次要為『MedkitMerge』或『KenshiQOL』）在解構視窗時引發記憶體異常，"
-            "並被『絕境系統（DivineGraceUI.dll）』的防崩潰機制強行吞掉，導致該 INVENTORY 視窗來不及銷毀而卡死在畫面上。"
-            "👉 解決方式：(1) 當下請先存檔並「完全退出遊戲重開」以清除殘留視窗；(2) 點擊上方可疑模組中的『Skeleton Rebirth』取消勾選並儲存順序即可根治。"
+            f"這是因為在撿拾物品並關閉視窗時，背包相關插件（目前啟用名單中以 {top_names} 嫌疑最高）在更新或解構視窗時引發記憶體異常，"
+            "並被『絕境系統（DivineGraceUI.dll）』的防崩潰機制攔截，導致該視窗殘留在畫面上。"
+            "👉 解決方式：(1) 當下請先存檔並「完全退出遊戲重開」以清除殘留視窗；(2) 可優先測試暫時停用上方排行前幾名的背包相關插件。"
         )
     if is_ui_or_inventory_crash:
         report.recommendations.append(
             "【背包／UI 閃退排查】偵測到介面渲染或開啟背包瞬間發生空指標異常（0xC0000005）。"
-            "建議先點擊上方可疑模組中的『Skeleton Rebirth』、『WantedMap（懸賞地圖）』或『MedkitMerge（急救包合併）』，"
+            f"在您目前有勾選啟用且載入記憶體的模組中，建議優先點擊上方排行中的 {top_names}，"
             "在主清單中暫時取消勾選並按「💾 儲存模組順序」，再進遊戲按 I 鍵或搜刮物品測試是否恢復正常。"
         )
     if report.missing_textures_owners:
