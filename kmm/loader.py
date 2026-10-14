@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterable
 
-from . import constants, logging_util
+from . import constants, logging_util, steam
 from .config import KenshiToolConfig
 from .mod_reader import load_metadata
 from .models import Mod, Source
@@ -100,7 +100,7 @@ def apply_profile(mods: list[Mod], names: list[str]) -> int:
 
 def is_link(path: Path) -> bool:
     try:
-        return path.is_symlink() or path.is_junction()
+        return path.is_symlink() or bool(hasattr(path, "is_junction") and path.is_junction())
     except OSError:
         return False
 
@@ -274,7 +274,13 @@ def get_list_of_mods(cfg: KenshiToolConfig) -> list[Mod]:
     if cfg.uses_steam and cfg.SteamModsPath:
         steam_path = Path(cfg.SteamModsPath)
         clean_workshop_acf(steam_path)
-        mods.extend(load_mods_from(cfg, current, steam_path))
+        steam_mods = load_mods_from(cfg, current, steam_path)
+        subscribers_map = steam.get_mod_subscribers(steam_path)
+        for sm in steam_mods:
+            mod_id = sm.id or Path(sm.folder).name
+            if mod_id and mod_id in subscribers_map:
+                sm.subscribed_by = subscribers_map[mod_id]
+        mods.extend(steam_mods)
     if cfg.GamePath:
         mods.extend(load_mods_from(cfg, current, cfg.mod_folder))
 
@@ -446,6 +452,34 @@ def is_mod_valid(mod: Mod) -> bool:
 def find_invalid_mods(mods: Iterable[Mod]) -> list[Mod]:
     """回傳所有資料夾不存在或缺少 .mod 檔案的無效模組。"""
     return [m for m in mods if not is_mod_valid(m)]
+
+
+def find_unsubscribed_inactive_mods(
+    mods: Iterable[Mod],
+    target_user_id: str | None = None,
+) -> list[Mod]:
+    """回傳所有未啟用且非目標帳號訂閱的模組。
+    若 target_user_id 有指定：
+      - 只要模組由 target_user_id 訂閱，即便未啟用也予以安全保留。
+      - 本機未啟用模組、或其他帳號訂閱且未啟用的模組，皆列為清理對象。
+    若 target_user_id 為 None：
+      - 任何在 Steam 工作坊有訂閱記錄的模組均予以保留。
+      - 僅清理完全無人訂閱或本機資料夾的未啟用模組。
+    """
+    targets: list[Mod] = []
+    for m in mods:
+        if m.active:
+            continue
+        if m.source is Source.STEAM:
+            if target_user_id:
+                if m.is_subscribed_by(target_user_id):
+                    continue
+            else:
+                if m.is_subscribed_by(None):
+                    continue
+        targets.append(m)
+    return targets
+
 
 
 def _force_remove_readonly(func, path, _exc) -> None:

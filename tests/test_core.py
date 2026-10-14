@@ -278,6 +278,25 @@ class LoaderTest(unittest.TestCase):
             self.assertTrue((ws / "100").exists())
             self.assertEqual([m.file_name for m in mods], ["ActiveMod.mod"])
 
+    def test_unsubscribed_inactive_cleanup_with_accounts(self):
+        """測試依帳號篩選：已啟用模組、與當前帳號有訂閱的模組（即便未啟用）均安全保留；僅清理非該帳號且未啟用的模組。"""
+        m_active = Mod(file_path="C:/ws/1/Active.mod", id="1", source=Source.STEAM, active=True, subscribed_by=["39156566"])
+        m_sub_inactive = Mod(file_path="C:/ws/2/SubInactive.mod", id="2", source=Source.STEAM, active=False, subscribed_by=["39156566"])
+        m_other_acc_inactive = Mod(file_path="C:/ws/3/OtherAcc.mod", id="3", source=Source.STEAM, active=False, subscribed_by=["354490438"])
+        m_local_inactive = Mod(file_path="C:/game/mods/Local/Local.mod", source=Source.GAME_FOLDER, active=False)
+
+        mods = [m_active, m_sub_inactive, m_other_acc_inactive, m_local_inactive]
+
+        # 以當前帳號 39156566 為基準清理
+        targets = loader.find_unsubscribed_inactive_mods(mods, target_user_id="39156566")
+        self.assertEqual(len(targets), 2)
+        # m_active (已啟用) 與 m_sub_inactive (當前帳號訂閱) 保留
+        self.assertNotIn(m_active, targets)
+        self.assertNotIn(m_sub_inactive, targets)
+        # m_other_acc_inactive 與 m_local_inactive 被選中清理
+        self.assertIn(m_other_acc_inactive, targets)
+        self.assertIn(m_local_inactive, targets)
+
     def test_backup_in_logs_dir_and_clear(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

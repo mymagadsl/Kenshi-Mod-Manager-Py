@@ -35,7 +35,18 @@ class Mod:
     references: list[str] = field(default_factory=list)
     conflicts: list[str] = field(default_factory=list)
     ordered_automatically: bool = False
+    subscribed_by: list[str] = field(default_factory=list)
     uid: str = field(default_factory=lambda: uuid.uuid4().hex)
+
+    def is_subscribed_by(self, user_id: str | None) -> bool:
+        """判斷此模組是否由指定的 Steam 帳號 (32-bit ID) 訂閱。若未提供 user_id，則只要有任何訂閱者即為 True。"""
+        if self.source is not Source.STEAM:
+            return False
+        if not self.subscribed_by:
+            return False
+        if not user_id:
+            return bool(self.subscribed_by)
+        return str(user_id) in self.subscribed_by
 
     @property
     def file_name(self) -> str:

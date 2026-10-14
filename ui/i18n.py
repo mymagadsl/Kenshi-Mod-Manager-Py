@@ -76,6 +76,9 @@ _ZH_TW: dict[str, str] = {
     "FILTER_IGNORE_TRANSLATION": "排除漢化衝突",
     "FILTER_IGNORE_PATCH": "排除補丁衝突",
     "FILTER_SHOW_ZH_NAME": "顯示中文譯名",
+    "FILTER_ACCOUNT": "帳號：",
+    "ACCOUNT_ALL": "全部帳號",
+    "ACCOUNT_CURRENT_SUFFIX": " [目前登入]",
     "SEARCH_NOT_FOUND": "找不到符合的模組",
     "SEARCH_FOUND": "找到 {cur}/{total}",
     "STATUS_SUMMARY": "共 {total} 個模組，已啟用 {active} 個",
@@ -99,8 +102,10 @@ _ZH_TW: dict[str, str] = {
     "MENU_MOVE_TOP": "移到最前面",
     "MENU_MOVE_BOTTOM": "移到最後面",
     "MENU_UNSUBSCRIBE": "在 Steam 取消訂閱（開啟工作坊頁面）",
+    "MENU_OPEN_WORKSHOP_SUBSCRIPTIONS": "在瀏覽器開啟此帳號的工作坊訂閱頁面",
     "MENU_REMOVE_MISSING": "移除該資料夾不存在的模組",
     "MENU_REMOVE_INACTIVE": "移除未勾選的模組與資料夾",
+    "MENU_REMOVE_UNSUBSCRIBED_INACTIVE": "移除未訂閱且未啟用模組",
 
     # 下方按鈕
     "BTN_OPEN_GAME": "開啟遊戲資料夾",
@@ -115,6 +120,10 @@ _ZH_TW: dict[str, str] = {
     # 詳細資訊
     "D_ZH_NAME": "中文譯名：",
     "D_WORKSHOP_TITLE": "工作坊標題：",
+    "D_SUBSCRIBED_BY": "訂閱帳號：",
+    "D_SUBSCRIBED_CURRENT": "🟢 當前帳號 ({name})",
+    "D_SUBSCRIBED_OTHER": "🟠 其他帳號 ({name})",
+    "D_SUBSCRIBED_LOCAL": "⚪ 本機模組 / 未在工作坊訂閱",
     "D_TRANSLATION": "漢化辨識：",
     "D_TRANSLATION_TARGET": "🌐 漢化模組（自動配對原版：{targets}）",
     "D_TRANSLATION_GLOBAL": "🌐 全域／獨立漢化模組",
@@ -189,6 +198,16 @@ _ZH_TW: dict[str, str] = {
         "（注意：若是 Steam 工作坊模組且未取消訂閱，Steam 下次可能會重新下載）\n"
         "確定要刪除這 {n} 個未勾選模組與資料夾嗎？"
     ),
+    "MSG_NO_UNSUBSCRIBED_INACTIVE_MODS": "目前沒有找到符合條件的「未訂閱且未啟用」模組。",
+    "MSG_CONFIRM_REMOVE_UNSUBSCRIBED_INACTIVE": (
+        "⚠ 依據管理帳號「{account}」的訂閱狀態判定：\n\n"
+        "找到 {n} 個「非此帳號訂閱且未啟用」的模組：\n\n"
+        "{preview}\n\n"
+        "✔ 此帳號訂閱的所有模組（包含未啟用）將全數安全保留。\n"
+        "（若部分模組屬於其他 Steam 帳號訂閱，建議至該帳號工作坊取消訂閱以防自動重新下載）\n\n"
+        "確定要從硬碟刪除這 {n} 個未訂閱且未啟用的模組嗎？"
+    ),
+    "MSG_OPEN_WORKSHOP_NO_ACCOUNT": "找不到可開啟的 Steam 帳號或 Steam ID。",
     "MSG_REMOVE_DONE": "已成功移除 {n} 個模組與其資料夾。",
     "MSG_REMOVE_ERRORS": "已移除 {n} 個模組，但有部分資料夾刪除失敗：\n{e}",
 
@@ -319,6 +338,9 @@ _ZH_CN: dict[str, str] = {
     "FILTER_IGNORE_TRANSLATION": "排除汉化冲突",
     "FILTER_IGNORE_PATCH": "排除补丁冲突",
     "FILTER_SHOW_ZH_NAME": "显示中文译名",
+    "FILTER_ACCOUNT": "账号：",
+    "ACCOUNT_ALL": "全部账号",
+    "ACCOUNT_CURRENT_SUFFIX": " [当前登录]",
     "SEARCH_NOT_FOUND": "找不到符合的模组",
     "SEARCH_FOUND": "找到 {cur}/{total}",
     "STATUS_SUMMARY": "共 {total} 个模组，已启用 {active} 个",
@@ -342,8 +364,10 @@ _ZH_CN: dict[str, str] = {
     "MENU_MOVE_TOP": "移到最顶部",
     "MENU_MOVE_BOTTOM": "移到最底部",
     "MENU_UNSUBSCRIBE": "在 Steam 取消订阅（打开创意工坊页面）",
+    "MENU_OPEN_WORKSHOP_SUBSCRIPTIONS": "在浏览器打开此账号的创意工坊订阅页面",
     "MENU_REMOVE_MISSING": "移除该文件夹不存在的模组",
     "MENU_REMOVE_INACTIVE": "移除未勾选的模组与文件夹",
+    "MENU_REMOVE_UNSUBSCRIBED_INACTIVE": "移除未订阅且未启用模组",
 
     # 下方按钮
     "BTN_OPEN_GAME": "打开游戏文件夹",
@@ -358,6 +382,10 @@ _ZH_CN: dict[str, str] = {
     # 详细信息
     "D_ZH_NAME": "中文译名：",
     "D_WORKSHOP_TITLE": "工坊标题：",
+    "D_SUBSCRIBED_BY": "订阅账号：",
+    "D_SUBSCRIBED_CURRENT": "🟢 当前账号 ({name})",
+    "D_SUBSCRIBED_OTHER": "🟠 其他账号 ({name})",
+    "D_SUBSCRIBED_LOCAL": "⚪ 本机模组 / 未在工坊订阅",
     "D_TRANSLATION": "汉化识别：",
     "D_TRANSLATION_TARGET": "🌐 汉化模组（自动配对原版：{targets}）",
     "D_TRANSLATION_GLOBAL": "🌐 全局／独立汉化模组",
@@ -432,6 +460,16 @@ _ZH_CN: dict[str, str] = {
         "（注意：若是 Steam 创意工坊模组且未取消订阅，Steam 下次可能会重新下载）\n"
         "确定要删除这 {n} 个未勾选模组与文件夹吗？"
     ),
+    "MSG_NO_UNSUBSCRIBED_INACTIVE_MODS": "当前没有找到符合条件的“未订阅且未启用”模组。",
+    "MSG_CONFIRM_REMOVE_UNSUBSCRIBED_INACTIVE": (
+        "⚠ 依据管理账号“{account}”的订阅状态判定：\n\n"
+        "找到 {n} 个“非此账号订阅且未启用”的模组：\n\n"
+        "{preview}\n\n"
+        "✔ 此账号订阅的所有模组（包含未启用）将全数安全保留。\n"
+        "（若部分模组属于其他 Steam 账号订阅，建议至该账号工坊取消订阅以防自动重新下载）\n\n"
+        "确定要从硬盘删除这 {n} 个未订阅且未启用的模组吗？"
+    ),
+    "MSG_OPEN_WORKSHOP_NO_ACCOUNT": "找不到可打开的 Steam 账号或 Steam ID。",
     "MSG_REMOVE_DONE": "已成功移除 {n} 个模组与其文件夹。",
     "MSG_REMOVE_ERRORS": "已移除 {n} 个模组，但有部分文件夹删除失败：\n{e}",
 
@@ -563,6 +601,9 @@ _EN_US: dict[str, str] = {
     "FILTER_IGNORE_TRANSLATION": "Ignore Translation Conflicts",
     "FILTER_IGNORE_PATCH": "Ignore Patch Conflicts",
     "FILTER_SHOW_ZH_NAME": "Show Chinese Alias",
+    "FILTER_ACCOUNT": "Account:",
+    "ACCOUNT_ALL": "All Accounts",
+    "ACCOUNT_CURRENT_SUFFIX": " [Current]",
     "SEARCH_NOT_FOUND": "No matching mods found",
     "SEARCH_FOUND": "Found {cur}/{total}",
     "STATUS_SUMMARY": "Total: {total} mods | Active: {active}",
@@ -586,8 +627,10 @@ _EN_US: dict[str, str] = {
     "MENU_MOVE_TOP": "Move to Top",
     "MENU_MOVE_BOTTOM": "Move to Bottom",
     "MENU_UNSUBSCRIBE": "Unsubscribe on Steam (Open Workshop Page)",
+    "MENU_OPEN_WORKSHOP_SUBSCRIPTIONS": "Open Workshop Subscriptions in Browser",
     "MENU_REMOVE_MISSING": "Remove Missing / Broken Mods",
     "MENU_REMOVE_INACTIVE": "Delete Inactive Mods & Folders",
+    "MENU_REMOVE_UNSUBSCRIBED_INACTIVE": "Remove Unsubscribed & Inactive Mods",
 
     # Bottom Bar
     "BTN_OPEN_GAME": "Open Game Folder",
@@ -602,6 +645,10 @@ _EN_US: dict[str, str] = {
     # Detail Panel
     "D_ZH_NAME": "Chinese Alias:",
     "D_WORKSHOP_TITLE": "Workshop Title:",
+    "D_SUBSCRIBED_BY": "Subscribed By:",
+    "D_SUBSCRIBED_CURRENT": "🟢 Current Account ({name})",
+    "D_SUBSCRIBED_OTHER": "🟠 Other Account ({name})",
+    "D_SUBSCRIBED_LOCAL": "⚪ Local Mod / Unsubscribed",
     "D_TRANSLATION": "Translation:",
     "D_TRANSLATION_TARGET": "🌐 Translation Mod (Paired with: {targets})",
     "D_TRANSLATION_GLOBAL": "🌐 Global / Standalone Translation Mod",
@@ -679,6 +726,16 @@ _EN_US: dict[str, str] = {
         "(Note: Steam Workshop mods may be re-downloaded by Steam unless unsubscribed)\n"
         "Are you sure you want to delete these {n} inactive mods?"
     ),
+    "MSG_NO_UNSUBSCRIBED_INACTIVE_MODS": "No unsubscribed and inactive mods found.",
+    "MSG_CONFIRM_REMOVE_UNSUBSCRIBED_INACTIVE": (
+        "⚠ Based on subscription status for account \"{account}\":\n\n"
+        "Found {n} mod(s) not subscribed by this account and currently inactive:\n\n"
+        "{preview}\n\n"
+        "✔ All mods subscribed by this account (including inactive) are safely kept.\n"
+        "(If some mods belong to another Steam account, unsubscribe there to avoid re-download)\n\n"
+        "Are you sure you want to delete these {n} mod(s) from disk?"
+    ),
+    "MSG_OPEN_WORKSHOP_NO_ACCOUNT": "No Steam account or ID available to open.",
     "MSG_REMOVE_DONE": "Successfully removed {n} mods and their folders.",
     "MSG_REMOVE_ERRORS": "Removed {n} mods, but some folders could not be deleted:\n{e}",
 

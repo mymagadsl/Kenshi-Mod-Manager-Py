@@ -8,7 +8,7 @@ from typing import Callable
 import customtkinter as ctk
 
 from kmm.conflicts import ConflictDetail
-from kmm.models import Mod
+from kmm.models import Mod, Source
 
 from . import i18n, theme
 
@@ -25,6 +25,7 @@ class DetailPanel(ctk.CTkFrame):
         conflict_of: Callable[[str], ConflictDetail | None] | None = None,
         translation_of: Callable[[Mod], list[str] | None] | None = None,
         patch_of: Callable[[Mod], list[str] | None] | None = None,
+        account_label_of: Callable[[str], str] | None = None,
         on_mod_click: Callable[[str], None] | None = None,
     ):
         super().__init__(master, fg_color=theme.PANEL, corner_radius=8)
@@ -32,6 +33,7 @@ class DetailPanel(ctk.CTkFrame):
         self.conflict_of = conflict_of or (lambda _k: None)
         self.translation_of = translation_of or (lambda _m: None)
         self.patch_of = patch_of or (lambda _m: None)
+        self.account_label_of = account_label_of
         self.on_mod_click = on_mod_click
         self.box = ctk.CTkTextbox(self, fg_color=theme.PANEL, text_color=theme.FG,
                                   font=theme.font(12), wrap="word", activate_scrollbars=True)
@@ -124,6 +126,26 @@ class DetailPanel(ctk.CTkFrame):
         self._field(i18n.D_VERSION, mod.version or "—")
         if mod.id:
             self._field(i18n.D_STEAM_ID, mod.id)
+
+        self._write(i18n.D_SUBSCRIBED_BY, "title")
+        self._write(" ")
+        if mod.source is Source.STEAM:
+            if mod.subscribed_by:
+                for idx, uid in enumerate(mod.subscribed_by):
+                    badge, tag = (
+                        self.account_label_of(uid)
+                        if self.account_label_of
+                        else (uid, "ok")
+                    )
+                    self._write(badge, tag)
+                    if idx < len(mod.subscribed_by) - 1:
+                        self._write("、")
+                self._write("\n")
+            else:
+                self._write(i18n.D_SUBSCRIBED_LOCAL + "\n", "dim")
+        else:
+            self._write(i18n.D_SUBSCRIBED_LOCAL + "\n", "dim")
+
         self._write(i18n.D_PATH, "title")
         self._write(" ")
         self._link(mod.file_path, mod.folder)

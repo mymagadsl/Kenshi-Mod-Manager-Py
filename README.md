@@ -25,7 +25,7 @@
 如果您是一般玩家，**不需要安裝 Python 或任何額外環境**，直接下載編譯好的獨立執行檔即可使用：
 
 1. 前往 **[👉 GitHub Releases 最新版本下載頁面](https://github.com/mymagadsl/Kenshi-Mod-Manager-Py/releases/latest)**。
-2. 下載 **`KenshiModManager.exe`**（或 **`KenshiModManager-v1.0.2-win64.zip`** 解壓縮）。
+2. 下載 **`KenshiModManager.exe`**（或 **`KenshiModManager-v1.0.3-win64.zip`** 解壓縮）。
 3. 將 `KenshiModManager.exe` 放在任意資料夾，雙擊即可直接執行！
    - 首次啟動時，程式會自動從 Windows 登錄檔與 Steam `libraryfolders.vdf` 偵測您的 **Kenshi 遊戲資料夾**與 **Steam 工作坊模組資料夾**（無須先開啟 Steam）。
    - 若您使用的是 GOG 或非 Steam 版本，也可在啟動提示或「`⚙ 設定`」視窗中手動指定 Kenshi 遊戲路徑。
@@ -44,6 +44,12 @@
 - **快速連結與工作坊退訂**：點擊網址直接開啟 Steam 工作坊或 NexusMods 頁面，亦可右鍵在 Steam 上取消訂閱或直接開啟模組本機資料夾。
 
 ### 2. 進階強化功能（本改寫版獨家新增）
+- **👥 Steam 多帳號切換管理與訂閱來源辨識（Multi-Account Subscription Management）**：
+  - 自動偵測目前正在運行的 Steam 帳號（讀取 Windows 登錄檔）與電腦上曾登入過的多帳號名稱（解析 `loginusers.vdf`，顯示如「狄力尼克」、「林謙」等玩家暱稱）。
+  - **頂部帳號篩選下拉選單**：支援「全部帳號」與個別帳號間即時過濾，快速檢視特定帳號訂閱的模組。
+  - **詳細面板訂閱來源標記**：直接標註模組是由「當前帳號」或「其他帳號」訂閱，或是「本機模組」。
+  - **右鍵「移除未訂閱且未啟用模組」**：以目前管理帳號為準，**安全保護該帳號所有已訂閱的模組（即便未啟用也絕不刪除）**，精準清理非該帳號且未啟用的殘留模組。
+  - **右鍵「在瀏覽器開啟此帳號的工作坊訂閱頁面」**：一鍵開啟 Steam 工作坊訂閱清單網頁，方便快速批次退訂。
 - **🩺 Kenshi 當機與 Log 診斷分析器（Crash & Log Diagnostic Analyzer）**：
   - 工具列提供「**🩺 分析當機 Log**」按鈕，一鍵深度解析遊戲目錄下的 `crashDump*.zip`（內建 Windows Minidump `.dmp` 二進位解析器，直接讀取崩潰瞬間 Exception Code `0xC0000005`、故障指令位址 `RIP` 與當下掛載於記憶體的 `.dll` 插件清單）、`RE_Kenshi_log.txt`、`RE_Kenshi/DesoCrash.log`、`MyGUI.log`、`kenshi_info.log` 與 `Havok.log`。
   - **🎯 可疑當機來源模組排行榜**：綜合崩潰位址、當機前密集運作紀錄與 `.dll` 二進位 Hook 特徵自動計分排序（嚴格過濾已取消勾選或未載入記憶體的模組），點擊排行榜上的按鈕即可在主視窗**一鍵定位並選取該模組**！

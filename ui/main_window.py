@@ -49,6 +49,11 @@ class MainWindow(ctk.CTk):
         self._search_after: str | None = None
         self._i18n_bindings: list[tuple[object, str]] = []
 
+        self.steam_accounts: list[steam.SteamAccount] = []
+        self.account_map: dict[str, steam.SteamAccount] = {}
+        self.selected_account_id: str | None = None
+        self._account_option_map: dict[str, str | None] = {}
+
         self._build_ui()
         self._build_context_menu()
         self._bind_shortcuts()
@@ -126,6 +131,16 @@ class MainWindow(ctk.CTk):
                                   command=cmd)
             chk.pack(side="left", padx=8)
             self._i18n_bindings.append((chk, key))
+
+        lbl_acc = ctk.CTkLabel(ff, text=i18n.FILTER_ACCOUNT, font=theme.font(12))
+        lbl_acc.pack(side="left", padx=(10, 2))
+        self._i18n_bindings.append((lbl_acc, "FILTER_ACCOUNT"))
+        self.opt_account = ctk.CTkOptionMenu(
+            ff, values=[i18n.ACCOUNT_ALL], width=180, font=theme.font(12),
+            fg_color=theme.PANEL, button_color=theme.ACCENT, command=self._on_account_changed
+        )
+        self.opt_account.pack(side="left", padx=4)
+
         self.lbl_search = ctk.CTkLabel(ff, text="", font=theme.font(12), text_color=theme.ACCENT)
         self.lbl_search.pack(side="right", padx=4)
 
@@ -165,6 +180,7 @@ class MainWindow(ctk.CTk):
             conflict_of=lambda key: self.conflict_index.get(key),
             translation_of=lambda mod: self.translation_map.get(mod.file_name),
             patch_of=lambda mod: self.patch_map.get(mod.file_name),
+            account_label_of=self._get_account_badge,
             on_mod_click=self._jump_to_mod_by_name,
         )
         self.detail.grid(row=4, column=0, sticky="nsew", padx=10, pady=4)
@@ -198,6 +214,7 @@ class MainWindow(ctk.CTk):
         self.search_entry.configure(placeholder_text=i18n.SEARCH_PLACEHOLDER)
         self.mod_list._update_headings()
         self._build_context_menu()
+        self._update_account_options()
         self._run_search()
         self.refresh_view()
 
@@ -217,9 +234,11 @@ class MainWindow(ctk.CTk):
         m.add_command(label=i18n.MENU_MOVE_BOTTOM, command=lambda: self._move_edge(top=False))
         m.add_separator()
         m.add_command(label=i18n.MENU_UNSUBSCRIBE, command=self.unsubscribe_selected)
+        m.add_command(label=i18n.MENU_OPEN_WORKSHOP_SUBSCRIPTIONS, command=self.open_current_account_workshop)
         self._unsub_idx = m.index("end")
         m.add_separator()
         m.add_command(label=i18n.MENU_REMOVE_MISSING, command=self.remove_missing_mods)
+        m.add_command(label=i18n.MENU_REMOVE_UNSUBSCRIBED_INACTIVE, command=self.remove_unsubscribed_inactive_mods)
         m.add_command(label=i18n.MENU_REMOVE_INACTIVE, command=self.remove_inactive_mods)
         self.ctx_menu = m
 
@@ -265,6 +284,7 @@ class MainWindow(ctk.CTk):
     def reload_mods(self, first_load: bool = False) -> None:
         self.lbl_status.configure(text=i18n.MSG_LOADING)
         self.update_idletasks()
+        self._update_account_options()
         self.mods = loader.get_list_of_mods(self.cfg)
         self.translation_map = conflicts.detect_translation_map(self.mods)
         self.patch_map = conflicts.detect_patch_map(self.mods, self.translation_map)
@@ -276,6 +296,36 @@ class MainWindow(ctk.CTk):
         self._run_search()
         self.refresh_view()
 
+    def _update_account_options(self) -> None:
+        """讀取 Steam 帳號清單並更新下拉選單。"""
+        self.steam_accounts = steam.get_known_steam_accounts()
+        self.account_map = {a.account_id_32: a for a in self.steam_accounts}
+        all_label = i18n.ACCOUNT_ALL
+        self._account_option_map = {all_label: None}
+        options = [all_label]
+        for acc in self.steam_accounts:
+            lbl = acc.display_name
+            self._account_option_map[lbl] = acc.account_id_32
+            options.append(lbl)
+
+        self.opt_account.configure(values=options)
+        matched_label = next((k for k, v in self._account_option_map.items() if v == self.selected_account_id), all_label)
+        self.opt_account.set(matched_label)
+
+    def _on_account_changed(self, choice: str) -> None:
+        self.selected_account_id = self._account_option_map.get(choice)
+        self.refresh_view()
+
+    def _get_account_badge(self, uid: str) -> tuple[str, str]:
+        """供 DetailPanel 顯示模組訂閱者名稱與樣式標籤。"""
+        acc = self.account_map.get(str(uid))
+        cur_uid = steam.current_active_steam_user_id()
+        is_cur = (str(uid) == cur_uid) or (acc and acc.is_current)
+        name = (acc.persona_name or acc.account_name) if acc else str(uid)
+        if is_cur:
+            return (i18n.D_SUBSCRIBED_CURRENT.format(name=name), "ok")
+        return (i18n.D_SUBSCRIBED_OTHER.format(name=name), "warn")
+
     def _on_toggle_conflict_filter(self) -> None:
         if self.conflict_index or any(m.conflicts for m in self.mods):
             self.check_conflicts(silent=True)
@@ -286,12 +336,14 @@ class MainWindow(ctk.CTk):
         show_s, show_r = self.var_steam.get(), self.var_regular.get()
         active_only = self.var_active_only.get()
         conflict_only = self.var_conflict_only.get()
+        target_uid = self.selected_account_id
         visible = [
             m for m in self.mods
             if ((show_s and m.source is Source.STEAM) or (show_r and m.source is Source.GAME_FOLDER)
                 or (not show_s and not show_r))
             and (not active_only or m.active)
             and (not conflict_only or bool(m.conflicts))
+            and (target_uid is None or m.source is Source.GAME_FOLDER or m.is_subscribed_by(target_uid))
         ]
         missing = {m.uid for m in self.mods if m.active and loader.missing_dependencies(self.mods, m)}
         search = {m.uid for m in self.search_hits}
@@ -545,6 +597,38 @@ class MainWindow(ctk.CTk):
         if not messagebox.askyesno(i18n.MSG_TITLE_CONFIRM, msg, parent=self):
             return
         self._execute_remove(targets)
+
+    def remove_unsubscribed_inactive_mods(self) -> None:
+        """依照目前管理帳號移除未訂閱且未啟用的模組，安全保留該帳號所有已訂閱的模組。"""
+        target_uid = self.selected_account_id or steam.current_active_steam_user_id()
+        acc = self.account_map.get(str(target_uid)) if target_uid else None
+        acc_name = acc.display_name if acc else (target_uid or i18n.ACCOUNT_ALL)
+
+        targets = loader.find_unsubscribed_inactive_mods(self.mods, target_uid)
+        if not targets:
+            messagebox.showinfo(i18n.MSG_TITLE_INFO, i18n.MSG_NO_UNSUBSCRIBED_INACTIVE_MODS, parent=self)
+            return
+
+        msg = i18n.MSG_CONFIRM_REMOVE_UNSUBSCRIBED_INACTIVE.format(
+            account=acc_name,
+            n=len(targets),
+            preview=self._preview_mods(targets),
+        )
+        if not messagebox.askyesno(i18n.MSG_TITLE_CONFIRM, msg, parent=self):
+            return
+        self._execute_remove(targets)
+
+    def open_current_account_workshop(self) -> None:
+        """在瀏覽器中開啟目前所選帳號（或當前登入帳號）的 Steam 工作坊訂閱頁面。"""
+        target_uid = self.selected_account_id or steam.current_active_steam_user_id()
+        acc = self.account_map.get(str(target_uid)) if target_uid else None
+        if not acc and self.steam_accounts:
+            acc = self.steam_accounts[0]
+
+        if acc and acc.steam_id_64:
+            webbrowser.open(acc.workshop_subscriptions_url())
+        else:
+            messagebox.showinfo(i18n.MSG_TITLE_INFO, i18n.MSG_OPEN_WORKSHOP_NO_ACCOUNT, parent=self)
 
     def remove_inactive_mods(self) -> None:
         """移除所有未勾選（未啟用）的模組與其資料夾。"""
