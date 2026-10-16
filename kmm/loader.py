@@ -260,6 +260,12 @@ def load_mods_from(cfg: KenshiToolConfig, current: list[str], path: Path) -> lis
             mod.version = str(md.version)
             mod.author = md.author
 
+        target_path = mod_files[0] if mod_files else item
+        try:
+            mod.updated_at = target_path.stat().st_mtime
+        except OSError:
+            pass
+
         if mod.file_name in current:
             mod.active = True
             mod.order = current.index(mod.file_name)
@@ -276,10 +282,13 @@ def get_list_of_mods(cfg: KenshiToolConfig) -> list[Mod]:
         clean_workshop_acf(steam_path)
         steam_mods = load_mods_from(cfg, current, steam_path)
         subscribers_map = steam.get_mod_subscribers(steam_path)
+        update_times_map = steam.get_mod_update_times(steam_path)
         for sm in steam_mods:
             mod_id = sm.id or Path(sm.folder).name
             if mod_id and mod_id in subscribers_map:
                 sm.subscribed_by = subscribers_map[mod_id]
+            if mod_id and mod_id in update_times_map:
+                sm.updated_at = update_times_map[mod_id]
         mods.extend(steam_mods)
     if cfg.GamePath:
         mods.extend(load_mods_from(cfg, current, cfg.mod_folder))

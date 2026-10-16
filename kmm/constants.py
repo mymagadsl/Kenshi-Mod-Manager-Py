@@ -6,6 +6,8 @@ APP_NAME = "Kenshi 模組管理器"
 APP_VERSION = "1.0.3"
 
 KENSHI_APP_ID = "233860"
+DEFAULT_STEAM_PAGE_URL = "https://steamcommunity.com/sharedfiles/filedetails/?id="
+DEFAULT_STEAM_SEARCH_URL = f"https://steamcommunity.com/workshop/browse/?appid={KENSHI_APP_ID}&searchtext="
 
 # 解析相依時要略過的遊戲本體檔案（小寫比對）
 SKIPPABLE_MODS = {"gamedata.base", "rebirth.mod", "newwworld.mod", "dialogue.mod"}

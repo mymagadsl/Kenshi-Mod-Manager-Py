@@ -548,6 +548,78 @@ class BuildGuiTest(unittest.TestCase):
             self.assertIn('APP_VERSION = "1.0.2"', dummy_const.read_text(encoding="utf-8"))
 
 
+class ModUpdateTimeTest(unittest.TestCase):
+    def test_mod_update_status_and_display(self):
+        import time
+        now = 1700000000.0  # 固定時間基準
+        m_today = Mod(file_path="C:/m/t.mod", updated_at=now - 3600)  # 1 小時前
+        m_week = Mod(file_path="C:/m/w.mod", updated_at=now - 86400 * 3)  # 3 天前
+        m_old = Mod(file_path="C:/m/o.mod", updated_at=now - 86400 * 15)  # 15 天前
+        m_none = Mod(file_path="C:/m/n.mod")
+
+        self.assertEqual(m_today.update_status(now), "today")
+        self.assertEqual(m_week.update_status(now), "week")
+        self.assertEqual(m_old.update_status(now), "older")
+        self.assertEqual(m_none.update_status(now), "older")
+
+        self.assertNotEqual(m_today.updated_display, "—")
+        self.assertNotEqual(m_today.updated_date_only, "—")
+        self.assertEqual(m_none.updated_display, "—")
+        self.assertEqual(m_none.updated_date_only, "—")
+
+    def test_get_mod_update_times_from_acf(self):
+        with tempfile.TemporaryDirectory() as d:
+            steam_mods = Path(d) / "steamapps" / "workshop" / "content" / "233860"
+            steam_mods.mkdir(parents=True)
+            acf = Path(d) / "steamapps" / "workshop" / "appworkshop_233860.acf"
+            acf.write_text(
+                '"AppWorkshop" {\n'
+                '  "WorkshopItemsInstalled" {\n'
+                '    "1001" {\n'
+                '      "size" "100"\n'
+                '      "timeupdated" "1600000000"\n'
+                '    }\n'
+                '  }\n'
+                '  "WorkshopItemDetails" {\n'
+                '    "1001" {\n'
+                '      "timeupdated" "1600000050"\n'
+                '    }\n'
+                '    "1002" {\n'
+                '      "timeupdated" "1650000000"\n'
+                '    }\n'
+                '  }\n'
+                '}\n',
+                encoding="utf-8",
+            )
+            times = steam.get_mod_update_times(steam_mods)
+            self.assertEqual(times.get("1001"), 1600000050.0)  # 取較新的
+            self.assertEqual(times.get("1002"), 1650000000.0)
+            self.assertIsNone(times.get("9999"))
+
+
+class ModUrlTest(unittest.TestCase):
+    def test_mod_url_with_steam_id(self):
+        m = Mod(file_path="C:/m/cool_mod.mod", id="12345678")
+        url = m.url()
+        self.assertEqual(url, "https://steamcommunity.com/sharedfiles/filedetails/?id=12345678")
+        self.assertNotIn("nexusmods.com", url)
+
+    def test_mod_url_without_id_searches_steam(self):
+        m = Mod(file_path="C:/m/My Custom Mod.mod", id=None)
+        url = m.url()
+        self.assertIn("https://steamcommunity.com/workshop/browse/?appid=233860&searchtext=", url)
+        self.assertIn("My+Custom+Mod", url)
+        self.assertNotIn("nexusmods.com", url)
+
+    def test_mod_url_ignores_legacy_nexus_url(self):
+        m = Mod(file_path="C:/m/Local.mod", id=None)
+        # 即使外部舊代碼傳入 nexus 網址，也自動修正為 steam 搜尋
+        url = m.url("https://steamcommunity.com/sharedfiles/filedetails/?id=", "https://www.nexusmods.com/kenshi/search/?gsearch=")
+        self.assertIn("steamcommunity.com/workshop/browse", url)
+        self.assertNotIn("nexusmods.com", url)
+
+
 if __name__ == "__main__":
     unittest.main()
+
 

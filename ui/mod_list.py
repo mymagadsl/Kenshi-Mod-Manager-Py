@@ -11,7 +11,7 @@ from kmm.models import Mod
 
 from . import i18n, theme
 
-COLUMNS = ("active", "order", "name", "categories", "source")
+COLUMNS = ("active", "order", "name", "updated", "categories", "source")
 
 
 def _headers() -> dict[str, str]:
@@ -19,6 +19,7 @@ def _headers() -> dict[str, str]:
         "active": i18n.COL_ACTIVE,
         "order": i18n.COL_ORDER,
         "name": i18n.COL_NAME,
+        "updated": i18n.COL_UPDATED,
         "categories": i18n.COL_CATEGORIES,
         "source": i18n.COL_SOURCE,
     }
@@ -32,6 +33,7 @@ def _sort_key(col: str) -> Callable[[Mod], object]:
         "active": lambda m: (not m.active, m.order if m.active else 0, m.display_name.lower()),
         "order": lambda m: (not m.active, m.order if m.active else 0, m.display_name.lower()),
         "name": lambda m: m.display_name.lower(),
+        "updated": lambda m: (m.updated_at or 0.0, m.display_name.lower()),
         "categories": lambda m: (m.display_categories.lower(), m.display_name.lower()),
         "source": lambda m: (m.source.value, m.display_name.lower()),
     }[col]
@@ -44,11 +46,13 @@ class ModListView(ctk.CTkFrame):
                  on_reorder: Callable[[Mod, Mod], None],
                  on_order_edit: Callable[[Mod, str], None],
                  on_context: Callable[[tk.Event], None],
-                 on_drag_blocked: Callable[[], None]):
+                 on_drag_blocked: Callable[[], None],
+                 on_sort: Callable[[], None] | None = None):
         super().__init__(master, fg_color=theme.PANEL, corner_radius=8)
         self.on_select, self.on_toggle = on_select, on_toggle
         self.on_reorder, self.on_order_edit = on_reorder, on_order_edit
         self.on_drag_blocked = on_drag_blocked
+        self.on_sort = on_sort
 
         self._mods: dict[str, Mod] = {}
         self.sort_col, self.sort_reverse = "order", False
@@ -59,11 +63,11 @@ class ModListView(ctk.CTkFrame):
 
         self.tree = ttk.Treeview(self, columns=COLUMNS, show="headings",
                                  selectmode="extended", style="KMM.Treeview")
-        widths = {"active": 56, "order": 64, "name": 420, "categories": 200, "source": 100}
+        widths = {"active": 56, "order": 64, "name": 360, "updated": 110, "categories": 180, "source": 90}
         headers = _headers()
         for col in COLUMNS:
             self.tree.heading(col, text=headers[col], command=lambda c=col: self.sort_by(c))
-            anchor = "center" if col in ("active", "order", "source") else "w"
+            anchor = "center" if col in ("active", "order", "source", "updated") else "w"
             self.tree.column(col, width=widths[col], anchor=anchor,
                              stretch=col in ("name", "categories"), minwidth=40)
 
@@ -73,6 +77,8 @@ class ModListView(ctk.CTkFrame):
         self.tree.tag_configure("conflict", background=theme.ROW_CONFLICT)
         self.tree.tag_configure("missing", background=theme.ROW_MISSING)
         self.tree.tag_configure("search", background=theme.ROW_SEARCH)
+        self.tree.tag_configure("updated_today", background=theme.ROW_UPDATED_TODAY, foreground=theme.FG_UPDATED_TODAY)
+        self.tree.tag_configure("updated_week", background=theme.ROW_UPDATED_WEEK, foreground=theme.FG_UPDATED_WEEK)
         self.tree.tag_configure("drop", background=theme.ACCENT)
 
         sb = ctk.CTkScrollbar(self, command=self.tree.yview)
@@ -107,23 +113,44 @@ class ModListView(ctk.CTkFrame):
         self._mods = {m.uid: m for m in mods}
         ordered = sorted(mods, key=_sort_key(self.sort_col), reverse=self.sort_reverse)
         for i, m in enumerate(ordered):
-            tags = ["odd"] if i % 2 else []
-            if not m.active:
-                tags.append("inactive")
-            if not m.has_extension:
-                tags.append("error")
-            if m.conflicts:
-                tags.append("conflict")
-            if m.uid in missing:
-                tags.append("missing")
+            tags: list[str] = []
             if m.uid in search:
                 tags.append("search")
+            if m.uid in missing:
+                tags.append("missing")
+            if m.conflicts:
+                tags.append("conflict")
+
+            status = m.update_status()
+            if status == "today":
+                tags.append("updated_today")
+            elif status == "week":
+                tags.append("updated_week")
+            elif i % 2:
+                tags.append("odd")
+
+            if not m.has_extension:
+                tags.append("error")
+            elif not m.active:
+                tags.append("inactive")
+
             base_name = m.ui_name(show_zh)
             name_label = f"{base_name}  [⚠ {len(m.conflicts)}]" if m.conflicts else base_name
+
+            if status == "today":
+                updated_label = f"🔥 {m.updated_date_only}"
+            elif status == "week":
+                updated_label = f"✨ {m.updated_date_only}"
+            else:
+                updated_label = m.updated_date_only
+
             self.tree.insert("", "end", iid=m.uid, tags=tags, values=(
                 CHECKED if m.active else UNCHECKED,
                 m.order if m.active else "",
-                name_label, m.display_categories, i18n.source_label(m.source)))
+                name_label,
+                updated_label,
+                m.display_categories,
+                i18n.source_label(m.source)))
         keep = [i for i in sel if i in self._mods]
         if keep:
             self.tree.selection_set(keep)
@@ -147,9 +174,12 @@ class ModListView(ctk.CTkFrame):
         if self.sort_col == col:
             self.sort_reverse = not self.sort_reverse
         else:
-            self.sort_col, self.sort_reverse = col, False
+            self.sort_col = col
+            # 「更新時間」點擊時優先呈現最新更新（降冪）；其餘欄位預設升冪
+            self.sort_reverse = (col == "updated")
         self._update_headings()
-        self.event_generate("<<ResortRequested>>")
+        if self.on_sort:
+            self.on_sort()
 
     def _update_headings(self) -> None:
         headers = _headers()

@@ -90,6 +90,7 @@ _ZH_TW: dict[str, str] = {
     "COL_NAME": "名稱",
     "COL_CATEGORIES": "分類",
     "COL_SOURCE": "來源",
+    "COL_UPDATED": "更新時間",
 
     # 右鍵選單
     "MENU_VISIT_PAGE": "前往模組頁面",
@@ -131,6 +132,9 @@ _ZH_TW: dict[str, str] = {
     "D_PATCH_TARGET": "🔧 補丁／擴充模組（自動配對主模組：{targets}）",
     "D_DEPENDENCIES": "相依：",
     "D_REFERENCES": "參考：",
+    "D_UPDATED": "更新時間：",
+    "UPDATE_TODAY": "（當天更新）",
+    "UPDATE_WEEK": "（本週更新）",
     "D_AUTHOR": "作者：",
     "D_VERSION": "版本：",
     "D_PATH": "路徑：",
@@ -352,6 +356,7 @@ _ZH_CN: dict[str, str] = {
     "COL_NAME": "名称",
     "COL_CATEGORIES": "分类",
     "COL_SOURCE": "来源",
+    "COL_UPDATED": "更新时间",
 
     # 右键菜单
     "MENU_VISIT_PAGE": "访问模组页面",
@@ -393,6 +398,9 @@ _ZH_CN: dict[str, str] = {
     "D_PATCH_TARGET": "🔧 补丁／扩展模组（自动配对主模组：{targets}）",
     "D_DEPENDENCIES": "依赖：",
     "D_REFERENCES": "引用：",
+    "D_UPDATED": "更新时间：",
+    "UPDATE_TODAY": "（当天更新）",
+    "UPDATE_WEEK": "（本周更新）",
     "D_AUTHOR": "作者：",
     "D_VERSION": "版本：",
     "D_PATH": "路径：",
@@ -615,6 +623,7 @@ _EN_US: dict[str, str] = {
     "COL_NAME": "Name",
     "COL_CATEGORIES": "Categories",
     "COL_SOURCE": "Source",
+    "COL_UPDATED": "Updated",
 
     # Context Menu
     "MENU_VISIT_PAGE": "Visit Mod Page",
@@ -656,6 +665,9 @@ _EN_US: dict[str, str] = {
     "D_PATCH_TARGET": "🔧 Patch / Add-on Mod (Paired with: {targets})",
     "D_DEPENDENCIES": "Dependencies:",
     "D_REFERENCES": "References:",
+    "D_UPDATED": "Updated:",
+    "UPDATE_TODAY": "(Updated Today)",
+    "UPDATE_WEEK": "(Updated This Week)",
     "D_AUTHOR": "Author:",
     "D_VERSION": "Version:",
     "D_PATH": "Path:",

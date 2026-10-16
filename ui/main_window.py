@@ -153,9 +153,9 @@ class MainWindow(ctk.CTk):
             on_order_edit=self._manual_order,
             on_context=self._show_context_menu,
             on_drag_blocked=lambda: self._flash_status(i18n.MSG_DRAG_NEED_ORDER_SORT),
+            on_sort=self.refresh_view,
         )
         self.mod_list.grid(row=2, column=0, sticky="nsew", padx=10, pady=4)
-        self.mod_list.bind("<<ResortRequested>>", lambda e: self.refresh_view())
 
         # Row 3：資料夾捷徑列
         folders = ctk.CTkFrame(self, fg_color="transparent")

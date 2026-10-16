@@ -14,8 +14,9 @@ from . import constants, logging_util
 class KenshiToolConfig:
     GamePath: str = ""
     SteamModsPath: str = ""
-    SteamPageUrl: str = "https://steamcommunity.com/sharedfiles/filedetails/?id="
-    NexusPageUrl: str = "https://www.nexusmods.com/kenshi/search/?gsearch="
+    SteamPageUrl: str = constants.DEFAULT_STEAM_PAGE_URL
+    SteamSearchUrl: str = constants.DEFAULT_STEAM_SEARCH_URL
+    NexusPageUrl: str = constants.DEFAULT_STEAM_SEARCH_URL
     MasterlistVersion: str | None = None
     MasterlistSource: str = "millerscout/kmm-masterlist"
     MaxLogFiles: int = 5

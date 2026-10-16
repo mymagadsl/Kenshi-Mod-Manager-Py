@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import enum
+import urllib.parse
 import uuid
 from dataclasses import dataclass, field
 from pathlib import PurePath
@@ -36,6 +37,7 @@ class Mod:
     conflicts: list[str] = field(default_factory=list)
     ordered_automatically: bool = False
     subscribed_by: list[str] = field(default_factory=list)
+    updated_at: float | None = None
     uid: str = field(default_factory=lambda: uuid.uuid4().hex)
 
     def is_subscribed_by(self, user_id: str | None) -> bool:
@@ -84,10 +86,63 @@ class Mod:
         return [d for d in (*self.dependencies, *self.references)
                 if d and d.lower() not in constants.SKIPPABLE_MODS]
 
-    def url(self, steam_page_url: str, nexus_page_url: str) -> str:
-        if self.source is Source.STEAM and self.id:
-            return steam_page_url + self.id
-        return nexus_page_url + self.display_name
+    def url(self, steam_page_url: str = "", nexus_page_url: str = "") -> str:
+        """回傳模組在 Steam 工作坊的專屬網址；若無 ID 則回傳 Steam 工作坊搜尋網址。"""
+        if self.id:
+            base = steam_page_url or constants.DEFAULT_STEAM_PAGE_URL
+            return base + self.id
+        # 無 ID 時，直接前往 Steam Kenshi 工作坊搜尋該模組名稱
+        search_base = (
+            nexus_page_url
+            if (nexus_page_url and "steamcommunity.com" in nexus_page_url)
+            else constants.DEFAULT_STEAM_SEARCH_URL
+        )
+        query = urllib.parse.quote_plus(self.display_name)
+        return search_base + query
+
+    @property
+    def updated_display(self) -> str:
+        """格式化為 'YYYY-MM-DD HH:MM'，無更新時間則為 '—'。"""
+        if not self.updated_at:
+            return "—"
+        try:
+            from datetime import datetime
+            return datetime.fromtimestamp(self.updated_at).strftime("%Y-%m-%d %H:%M")
+        except (OSError, OverflowError, ValueError):
+            return "—"
+
+    @property
+    def updated_date_only(self) -> str:
+        """用於列表精簡顯示 'YYYY-MM-DD'。"""
+        if not self.updated_at:
+            return "—"
+        try:
+            from datetime import datetime
+            return datetime.fromtimestamp(self.updated_at).strftime("%Y-%m-%d")
+        except (OSError, OverflowError, ValueError):
+            return "—"
+
+    def update_status(self, now: float | None = None) -> str:
+        """回傳 'today' (24小時內或今日)、'week' (7天內)、或 'older'。"""
+        if not self.updated_at:
+            return "older"
+        import time
+        from datetime import datetime
+        current = now if now is not None else time.time()
+        diff = current - self.updated_at
+        if diff < 0:
+            return "today"
+        # 若在 86400 秒 (24 小時) 內，或同一日曆天
+        if diff <= 86400:
+            return "today"
+        try:
+            if datetime.fromtimestamp(self.updated_at).date() == datetime.fromtimestamp(current).date():
+                return "today"
+        except (OSError, OverflowError, ValueError):
+            pass
+        if diff <= 7 * 86400:
+            return "week"
+        return "older"
 
 
 @dataclass

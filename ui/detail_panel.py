@@ -44,6 +44,8 @@ class DetailPanel(ctk.CTkFrame):
         t.tag_configure("ok", foreground=theme.OK)
         t.tag_configure("bad", foreground=theme.BAD)
         t.tag_configure("warn", font=(theme.FONT_FAMILY, 11, "bold"), foreground=theme.WARN)
+        t.tag_configure("today", font=(theme.FONT_FAMILY, 11, "bold"), foreground=theme.FG_UPDATED_TODAY)
+        t.tag_configure("week", font=(theme.FONT_FAMILY, 11, "bold"), foreground=theme.FG_UPDATED_WEEK)
         t.tag_configure("dim", foreground=theme.FG_DIM)
         t.tag_configure("link", foreground=theme.LINK, underline=True)
         t.tag_configure("mod_link_ok", foreground=theme.OK, underline=True)
@@ -121,6 +123,18 @@ class DetailPanel(ctk.CTkFrame):
             self._write("\n")
         if mod.active and (mod.dependencies or mod.references):
             self._write(i18n.D_LEGEND + "\n", "dim")
+
+        if mod.updated_at:
+            status = mod.update_status()
+            self._write(i18n.D_UPDATED, "title")
+            self._write(f" {mod.updated_display}")
+            if status == "today":
+                self._write(f"  {i18n.UPDATE_TODAY}", "today")
+            elif status == "week":
+                self._write(f"  {i18n.UPDATE_WEEK}", "week")
+            self._write("\n")
+        else:
+            self._field(i18n.D_UPDATED, "—")
 
         self._field(i18n.D_AUTHOR, mod.author or "—")
         self._field(i18n.D_VERSION, mod.version or "—")

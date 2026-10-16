@@ -227,3 +227,34 @@ def get_mod_subscribers(steam_mods_path: Path) -> dict[str, list[str]]:
                 result[mid] = []
     return result
 
+
+def get_mod_update_times(steam_mods_path: Path) -> dict[str, float]:
+    """從 appworkshop_233860.acf 解析各模組的工作坊更新時間戳記：{mod_id: timestamp}。"""
+    result: dict[str, float] = {}
+    if not steam_mods_path or not steam_mods_path.is_dir():
+        return result
+    acf_path = steam_mods_path.parent.parent / f"appworkshop_{constants.KENSHI_APP_ID}.acf"
+    if not acf_path.is_file():
+        return result
+
+    try:
+        text = acf_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return result
+
+    # 匹配 "123456" { ... "timeupdated" "1597011769" ... }
+    for m in re.finditer(r'"(\d+)"\s*\{([^{}]+)\}', text):
+        mid = m.group(1)
+        body = m.group(2)
+        tm = re.search(r'"timeupdated"\s+"(\d+)"', body)
+        if tm:
+            try:
+                val = float(tm.group(1))
+                # 若有多個區塊（如 Installed 與 Details），保留較新的 timestamp
+                if mid not in result or val > result[mid]:
+                    result[mid] = val
+            except ValueError:
+                pass
+    return result
+
+
